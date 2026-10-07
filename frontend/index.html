@@ -1,0 +1,69 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinuxGuard NOC</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header>
+        <h1>LinuxGuard NOC</h1>
+        <p>Sistema de monitoreo de servidores GNU/Linux</p>
+    </header>
+
+    <nav>
+        <a href="#inicio">Inicio</a>
+        <a href="#servidores">Servidores</a>
+        <a href="#alertas">Alertas</a>
+    </nav>
+
+    <main id="inicio">
+        <section id="servidores">
+            <h2>Estado del servidor</h2>
+            <p>Panel de monitoreo de recursos.</p>
+
+            
+       
+            <article>
+                <h3>CPU</h3>
+                <p>Uso: <span id="cpu">25</span>%</p>
+                <div class="barra">
+                <div id="barra-cpu" class="progreso"></div>
+                </div>
+            </article>
+
+            <article>
+                <h3>Memoria RAM</h3>
+                <p>Uso: <span id="ram">40</span>%</p>
+                <div class="barra">
+                <div id="barra-ram" class="progreso"></div>
+                </div>
+            </article>
+
+            <article>
+                <h3>Disco</h3>
+                <p>Uso: <span id="disco">60</span>%</p>
+                <div class="barra">
+                <div id="barra-disco" class="progreso"></div>
+                </div>
+            </article>
+
+
+        </section>
+
+        <section id="alertas">
+            <h2>Alertas del sistema</h2>
+            <p>No hay alertas registradas.</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>LinuxGuard NOC - Proyecto Integrador Final</p>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
