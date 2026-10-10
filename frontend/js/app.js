@@ -65,6 +65,14 @@ function actualizarRecursos() {
     const cpu = Math.floor(Math.random() * 101);
     const ram = Math.floor(Math.random() * 101);
     const disco = 60;
+    
+    // Simulación de tráfico de red en Mbps
+    const entrada = (Math.random() * 100).toFixed(1);
+    const salida = (Math.random() * 50).toFixed(1);
+
+    document.getElementById("red-entrada").textContent = entrada;
+    document.getElementById("red-salida").textContent = salida;
+
 
     document.getElementById("cpu").textContent = cpu;
     document.getElementById("ram").textContent = ram;

@@ -61,15 +61,52 @@ section h2 {
 }
 
 /* Tarjetas de monitoreo */
-article {
+#servidores article {
     display: inline-block;
-    background-color: #1e293b;
-    padding: 25px;
+    vertical-align: top;
+    width: calc(33.333% - 24px);
+    min-width: 0;
     margin: 10px;
-    border-radius: 10px;
-    min-width: 200px;
+    padding: 25px;
+    background-color: #1e293b;
     border: 1px solid #334155;
+    border-radius: 10px;
 }
+
+/* Tablets */
+@media (max-width: 900px) {
+    #servidores article {
+        width: calc(50% - 24px);
+    }
+}
+
+/* Celulares */
+@media (max-width: 600px) {
+    header {
+        padding: 20px 12px;
+    }
+
+    header h1 {
+        font-size: 26px;
+    }
+
+    nav a {
+        display: inline-block;
+        margin: 8px;
+    }
+
+    main {
+        margin: 15px auto;
+        padding: 10px;
+    }
+
+    #servidores article {
+        display: block;
+        width: 100%;
+        margin: 12px 0;
+    }
+}
+
 
 article h3 {
     color: #38bdf8;
