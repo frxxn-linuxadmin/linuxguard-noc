@@ -24,6 +24,14 @@ import { analizarEstadoSistema } from "./services/alertService.js";
 import { obtenerServicios } from "./services/serviceMonitor.js";
 
 
+// Importamos las funciones para guardar
+// y consultar el historial de eventos.
+import {
+  registrarEventos,
+  obtenerEventos
+} from "./services/eventService.js";
+
+
 // ----------------------------------------------------
 // CONFIGURACIÓN DE EXPRESS
 // ----------------------------------------------------
@@ -118,14 +126,16 @@ app.get("/api/sistema", async (req, res) => {
       servicios
     };
 
-    // Analizamos las métricas y determinamos:
-    // normal, advertencia o crítico.
-    const datosAnalizados =
-      analizarEstadoSistema(datosConServicios);
+// Analizamos las métricas y generamos
+// estados y alertas.
+const datosAnalizados =
+  analizarEstadoSistema(datosConServicios);
 
-    // IMPORTANTE:
-    // enviamos finalmente la respuesta al navegador.
-    res.json(datosAnalizados);
+// Guardamos en el historial las alertas detectadas.
+await registrarEventos(datosAnalizados.alertas);
+
+// Enviamos la respuesta completa al navegador.
+res.json(datosAnalizados);
 
   } catch (error) {
 
@@ -145,6 +155,38 @@ app.get("/api/sistema", async (req, res) => {
 
 });
 
+// ----------------------------------------------------
+// API DE EVENTOS
+// ----------------------------------------------------
+
+// Devuelve el historial de alertas guardadas.
+//
+// URL:
+// http://localhost:3000/api/eventos
+app.get("/api/eventos", async (req, res) => {
+
+  try {
+
+    // Leemos los eventos guardados.
+    const eventos = await obtenerEventos();
+
+    // Los enviamos al cliente en formato JSON.
+    res.json(eventos);
+
+  } catch (error) {
+
+    console.error(
+      "Error obteniendo historial de eventos:",
+      error
+    );
+
+    res.status(500).json({
+      error: "No se pudo obtener el historial de eventos"
+    });
+
+  }
+
+});
 
 // ----------------------------------------------------
 // SOCKET.IO
@@ -175,13 +217,17 @@ io.on("connection", (socket) => {
         servicios
       };
 
-      // Analizamos estados y alertas.
-      const datosAnalizados =
-        analizarEstadoSistema(datosConServicios);
+// Analizamos estados y alertas.
+const datosAnalizados =
+  analizarEstadoSistema(datosConServicios);
 
-      // Enviamos las métricas al cliente
-      // mediante el evento "metricas".
-      socket.emit("metricas", datosAnalizados);
+// Guardamos las alertas nuevas
+// en el historial.
+await registrarEventos(datosAnalizados.alertas);
+
+// Enviamos las métricas al cliente
+// mediante el evento "metricas".
+socket.emit("metricas", datosAnalizados);
 
     } catch (error) {
 
