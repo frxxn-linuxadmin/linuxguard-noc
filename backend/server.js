@@ -16,6 +16,9 @@ import { Server } from "socket.io";
 // Importamos nuestra función que obtiene las métricas del sistema.
 import { obtenerDatosSistema } from "./services/systemService.js";
 
+//Conectarlo las alertas con este servicio
+import { analizarEstadoSistema } from "./services/alertService.js";
+
 // Creamos la aplicación Express.
 const app = express();
 
@@ -73,11 +76,16 @@ app.get("/", (req, res) => {
 app.get("/api/sistema", async (req, res) => {
   try {
 
-    // Obtenemos las métricas utilizando nuestro servicio.
-    const datos = await obtenerDatosSistema();
+// Obtenemos las métricas reales del sistema.
+const datos = await obtenerDatosSistema();
 
-    // Respondemos al cliente con JSON.
-    res.json(datos);
+// Analizamos esas métricas para detectar
+// advertencias y estados críticos.
+const datosAnalizados = analizarEstadoSistema(datos);
+
+// Enviamos al cliente las métricas junto con
+// los estados y alertas.
+res.json(datosAnalizados);
 
   } catch (error) {
 
@@ -110,12 +118,14 @@ io.on("connection", (socket) => {
 
     try {
 
-      // Obtenemos las métricas actualizadas.
-      const datos = await obtenerDatosSistema();
+ // Obtenemos métricas actualizadas.
+const datos = await obtenerDatosSistema();
 
-      // Enviamos los datos solamente a este cliente.
-      // "metricas" es el nombre del evento.
-      socket.emit("metricas", datos);
+// Calculamos estados y alertas.
+const datosAnalizados = analizarEstadoSistema(datos);
+
+// Enviamos todo al frontend.
+socket.emit("metricas", datosAnalizados);
 
     } catch (error) {
 
