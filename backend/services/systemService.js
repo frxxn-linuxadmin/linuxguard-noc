@@ -37,6 +37,9 @@ export async function obtenerDatosSistema() {
   // Obtiene datos relacionados con el tiempo de funcionamiento del sistema.
   const tiempo = si.time();
 
+  // Obtiene información de los procesos en ejecución.
+const procesos = await si.processes();
+
   // Retornamos un objeto con todos los datos ordenados.
   // Este objeto después se convierte en JSON desde server.js.
   return {
@@ -141,6 +144,27 @@ discos: discos
         enviadosPorSegundo: interfaz.tx_sec
       }))
     },
+
+    // --------------------------------------------------
+// PROCESOS
+// --------------------------------------------------
+
+// Tomamos todos los procesos,
+// los ordenamos por uso de CPU de mayor a menor
+// y dejamos solamente los 10 más importantes.
+procesos: procesos.list
+
+  .sort((a, b) => b.cpu - a.cpu)
+
+  .slice(0, 10)
+
+  .map((proceso) => ({
+    pid: proceso.pid,
+    nombre: proceso.name,
+    cpuPorcentaje: Number(proceso.cpu.toFixed(2)),
+    memoriaPorcentaje: Number(proceso.mem.toFixed(2)),
+    estado: proceso.state
+  })),
 
     // Tiempo que lleva encendido el sistema, expresado en segundos.
     uptime: tiempo.uptime

@@ -13,31 +13,43 @@ import { createServer } from "http";
 // Esto nos permite crear el servidor WebSocket.
 import { Server } from "socket.io";
 
-// Importamos nuestra función que obtiene las métricas del sistema.
+// Importamos la función que obtiene las métricas del sistema.
 import { obtenerDatosSistema } from "./services/systemService.js";
 
-//Conectarlo las alertas con este servicio
+// Importamos la función que analiza métricas
+// y genera estados y alertas.
 import { analizarEstadoSistema } from "./services/alertService.js";
+
+// Importamos la función que consulta servicios de Linux.
+import { obtenerServicios } from "./services/serviceMonitor.js";
+
+
+// ----------------------------------------------------
+// CONFIGURACIÓN DE EXPRESS
+// ----------------------------------------------------
 
 // Creamos la aplicación Express.
 const app = express();
 
-// Puerto donde funcionará el backend.
+// Puerto donde funcionará LinuxGuard NOC.
 const PORT = 3000;
 
-// Activamos CORS para Express.
+// Permitimos conexiones desde otros orígenes.
 app.use(cors());
 
-// Permitimos recibir datos JSON.
+// Permitimos que Express pueda recibir JSON.
 app.use(express.json());
+
 
 // ----------------------------------------------------
 // SERVIDOR HTTP
 // ----------------------------------------------------
 
-// Creamos un servidor HTTP utilizando nuestra aplicación Express.
-// Antes usábamos directamente app.listen().
-// Ahora necesitamos este servidor HTTP para conectar Socket.IO.
+// Creamos el servidor HTTP.
+//
+// Express manejará las rutas HTTP y Socket.IO
+// utilizará este mismo servidor para las conexiones
+// en tiempo real.
 const httpServer = createServer(app);
 
 
@@ -45,87 +57,131 @@ const httpServer = createServer(app);
 // SOCKET.IO
 // ----------------------------------------------------
 
-// Creamos el servidor Socket.IO.
-// Le indicamos que acepte conexiones desde cualquier origen.
-// Durante desarrollo usamos "*".
+// Creamos Socket.IO sobre nuestro servidor HTTP.
 const io = new Server(httpServer, {
   cors: {
+    // Durante desarrollo permitimos cualquier origen.
     origin: "*",
+
+    // Métodos HTTP permitidos.
     methods: ["GET", "POST"]
   }
 });
 
 
 // ----------------------------------------------------
-// RUTAS HTTP
+// RUTA PRINCIPAL
 // ----------------------------------------------------
 
-// Ruta principal.
-// Sirve para comprobar rápidamente que el backend funciona.
+// Ruta simple para comprobar que el backend funciona.
+//
+// URL:
+// http://localhost:3000/
 app.get("/", (req, res) => {
+
   res.json({
     proyecto: "LinuxGuard NOC",
     estado: "Backend funcionando"
   });
+
 });
 
 
-// Endpoint de la API.
-// Devuelve una fotografía de las métricas del sistema
-// en el momento en que el cliente hace la petición.
+// ----------------------------------------------------
+// API DEL SISTEMA
+// ----------------------------------------------------
+
+// Endpoint principal.
+//
+// URL:
+// http://localhost:3000/api/sistema
+//
+// Devuelve las métricas actuales del sistema,
+// servicios, estados y alertas.
 app.get("/api/sistema", async (req, res) => {
+
   try {
 
-// Obtenemos las métricas reales del sistema.
-const datos = await obtenerDatosSistema();
+    // Obtenemos CPU, RAM, discos, red,
+    // procesos, temperatura, etc.
+    const datos = await obtenerDatosSistema();
 
-// Analizamos esas métricas para detectar
-// advertencias y estados críticos.
-const datosAnalizados = analizarEstadoSistema(datos);
+    // Consultamos el estado de los servicios Linux.
+    const servicios = await obtenerServicios();
 
-// Enviamos al cliente las métricas junto con
-// los estados y alertas.
-res.json(datosAnalizados);
+    // Unimos las métricas con los servicios.
+    //
+    // "...datos" copia todo el contenido
+    // del objeto datos.
+    const datosConServicios = {
+      ...datos,
+      servicios
+    };
+
+    // Analizamos las métricas y determinamos:
+    // normal, advertencia o crítico.
+    const datosAnalizados =
+      analizarEstadoSistema(datosConServicios);
+
+    // IMPORTANTE:
+    // enviamos finalmente la respuesta al navegador.
+    res.json(datosAnalizados);
 
   } catch (error) {
 
-    // Mostramos el error en la consola del servidor.
-    console.error("Error obteniendo datos del sistema:", error);
+    // Si algo falla, mostramos el error
+    // en la terminal del backend.
+    console.error(
+      "Error obteniendo datos del sistema:",
+      error
+    );
 
-    // Respondemos con código HTTP 500.
+    // Respondemos HTTP 500 al cliente.
     res.status(500).json({
       error: "No se pudo obtener la información del sistema"
     });
+
   }
+
 });
 
 
 // ----------------------------------------------------
-// CONEXIONES SOCKET.IO
+// SOCKET.IO
 // ----------------------------------------------------
 
-// Este evento se ejecuta cada vez que un cliente
+// Se ejecuta cada vez que un cliente
 // se conecta mediante Socket.IO.
 io.on("connection", (socket) => {
 
-  // Mostramos en consola el identificador único del cliente.
+  // Mostramos el ID único del cliente conectado.
   console.log("Cliente conectado:", socket.id);
 
 
-  // Creamos un intervalo para enviar métricas
-  // automáticamente cada 2 segundos.
+  // Cada 2 segundos obtenemos información nueva.
   const intervalo = setInterval(async () => {
 
     try {
 
- // Obtenemos métricas actualizadas.
-const datos = await obtenerDatosSistema();
+      // Obtenemos métricas actualizadas.
+      const datos = await obtenerDatosSistema();
 
-// Calculamos estados y alertas.
-const datosAnalizados = analizarEstadoSistema(datos);
+      // Obtenemos también los servicios Linux.
+      const servicios = await obtenerServicios();
 
-// Enviamos todo al frontend.
-socket.emit("metricas", datosAnalizados);
+      // Unimos métricas y servicios.
+      const datosConServicios = {
+        ...datos,
+        servicios
+      };
+
+      // Analizamos estados y alertas.
+      const datosAnalizados =
+        analizarEstadoSistema(datosConServicios);
+
+      // Enviamos las métricas al cliente
+      // mediante el evento "metricas".
+      socket.emit("metricas", datosAnalizados);
 
     } catch (error) {
 
@@ -133,19 +189,24 @@ socket.emit("metricas", datosAnalizados);
         "Error enviando métricas por Socket.IO:",
         error
       );
+
     }
 
   }, 2000);
 
 
-  // Este evento se ejecuta cuando el cliente se desconecta.
+  // Se ejecuta cuando el cliente se desconecta.
   socket.on("disconnect", () => {
 
-    console.log("Cliente desconectado:", socket.id);
+    console.log(
+      "Cliente desconectado:",
+      socket.id
+    );
 
-    // Detenemos el intervalo para evitar que siga ejecutándose
-    // después de que el cliente se haya desconectado.
+    // Detenemos el intervalo correspondiente
+    // a este cliente.
     clearInterval(intervalo);
+
   });
 
 });
@@ -155,9 +216,11 @@ socket.emit("metricas", datosAnalizados);
 // INICIAR SERVIDOR
 // ----------------------------------------------------
 
-// Antes usábamos app.listen().
-// Ahora usamos httpServer.listen() porque Express y Socket.IO
-// comparten el mismo servidor HTTP.
+// Iniciamos el servidor HTTP.
+//
+// Como Socket.IO y Express comparten el mismo
+// servidor, usamos httpServer.listen()
+// y no app.listen().
 httpServer.listen(PORT, () => {
 
   console.log(
