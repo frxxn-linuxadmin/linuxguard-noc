@@ -2,54 +2,52 @@
 // IMPORTACIONES
 // ----------------------------------------------------
 
-// Express crea el servidor web y las rutas HTTP.
 import express from "express";
-
-// CORS permite que el frontend pueda conectarse
-// desde otro origen, por ejemplo otra PC o puerto.
 import cors from "cors";
 
-// createServer crea el servidor HTTP real
-// que van a compartir Express y Socket.IO.
 import { createServer } from "http";
-
-// Server es el servidor de Socket.IO.
 import { Server } from "socket.io";
 
-// Obtiene métricas reales del sistema:
-// CPU, RAM, discos, red, procesos, uptime, etc.
-import { obtenerDatosSistema } from "./services/systemService.js";
+// Métricas del sistema.
+import {
+  obtenerDatosSistema
+} from "./services/systemService.js";
 
-// Analiza las métricas y determina estados:
-// normal, advertencia o crítico.
-import { analizarEstadoSistema } from "./services/alertService.js";
+// Estados y alertas.
+import {
+  analizarEstadoSistema
+} from "./services/alertService.js";
 
-// Consulta el estado de servicios Linux
-// como ssh, apache2 y nginx.
-import { obtenerServicios } from "./services/serviceMonitor.js";
+// Servicios Linux.
+import {
+  obtenerServicios
+} from "./services/serviceMonitor.js";
 
-// Funciones para guardar y consultar
-// el historial de eventos y alertas.
+// Historial de eventos.
 import {
   registrarEventos,
   obtenerEventos
 } from "./services/eventService.js";
+
+// Configuración de umbrales.
+import {
+  obtenerUmbrales,
+  guardarUmbrales
+} from "./services/configService.js";
 
 
 // ----------------------------------------------------
 // CONFIGURACIÓN DE EXPRESS
 // ----------------------------------------------------
 
-// Creamos la aplicación Express.
 const app = express();
 
-// Puerto donde funcionará el backend.
 const PORT = 3000;
 
-// Activamos CORS.
+// Permitimos conexiones desde otros orígenes.
 app.use(cors());
 
-// Permitimos recibir información en formato JSON.
+// Permitimos recibir JSON.
 app.use(express.json());
 
 
@@ -57,12 +55,6 @@ app.use(express.json());
 // SERVIDOR HTTP
 // ----------------------------------------------------
 
-// Creamos un servidor HTTP utilizando Express.
-//
-// Este servidor será compartido por:
-//
-// - Express para la API REST.
-// - Socket.IO para comunicación en tiempo real.
 const httpServer = createServer(app);
 
 
@@ -70,17 +62,11 @@ const httpServer = createServer(app);
 // SOCKET.IO
 // ----------------------------------------------------
 
-// Creamos el servidor Socket.IO.
 const io = new Server(httpServer, {
 
   cors: {
-
-    // Durante el desarrollo aceptamos conexiones
-    // desde cualquier origen.
     origin: "*",
-
-    // Métodos permitidos.
-    methods: ["GET", "POST"]
+    methods: ["GET", "POST", "PUT"]
   }
 
 });
@@ -90,11 +76,6 @@ const io = new Server(httpServer, {
 // RUTA PRINCIPAL
 // ----------------------------------------------------
 
-// Sirve para verificar rápidamente
-// que el backend esté funcionando.
-//
-// URL:
-// http://localhost:3000/
 app.get("/", (req, res) => {
 
   res.json({
@@ -106,87 +87,53 @@ app.get("/", (req, res) => {
 
 
 // ----------------------------------------------------
-// API PRINCIPAL DEL SISTEMA
+// API DEL SISTEMA
 // ----------------------------------------------------
 
-// Devuelve todas las métricas actuales.
+// Devuelve las métricas actuales.
 //
-// URL:
+// GET:
 // http://localhost:3000/api/sistema
 app.get("/api/sistema", async (req, res) => {
 
   try {
 
-    // ------------------------------------------------
-    // 1. OBTENER MÉTRICAS
-    // ------------------------------------------------
+    // Obtenemos métricas del sistema.
+    const datos =
+      await obtenerDatosSistema();
 
-    // Obtenemos información del sistema:
-    // CPU, RAM, discos, red, procesos, etc.
-    const datos = await obtenerDatosSistema();
+    // Obtenemos estado de servicios Linux.
+    const servicios =
+      await obtenerServicios();
 
-
-    // ------------------------------------------------
-    // 2. OBTENER SERVICIOS
-    // ------------------------------------------------
-
-    // Consultamos servicios de Linux.
-    const servicios = await obtenerServicios();
-
-
-    // ------------------------------------------------
-    // 3. UNIR INFORMACIÓN
-    // ------------------------------------------------
-
-    // Creamos un nuevo objeto que contiene
-    // todas las métricas y además los servicios.
+    // Unimos ambos resultados.
     const datosConServicios = {
       ...datos,
       servicios
     };
 
-
-    // ------------------------------------------------
-    // 4. ANALIZAR ALERTAS
-    // ------------------------------------------------
-
-    // Analizamos las métricas usando los umbrales
-    // definidos en config/thresholds.json.
-    //
-    // Ahora usamos await porque
-    // analizarEstadoSistema() es async.
+    // Analizamos alertas usando
+    // los umbrales configurados.
     const datosAnalizados =
-      await analizarEstadoSistema(datosConServicios);
+      await analizarEstadoSistema(
+        datosConServicios
+      );
 
-
-    // ------------------------------------------------
-    // 5. GUARDAR EVENTOS
-    // ------------------------------------------------
-
-    // Si se detectaron alertas nuevas,
-    // las guardamos en data/events.json.
+    // Guardamos alertas nuevas.
     await registrarEventos(
       datosAnalizados.alertas
     );
 
-
-    // ------------------------------------------------
-    // 6. RESPONDER AL CLIENTE
-    // ------------------------------------------------
-
-    // Enviamos toda la información en formato JSON.
+    // Respondemos al cliente.
     res.json(datosAnalizados);
 
   } catch (error) {
 
-    // Si algo falla, mostramos el error
-    // en la consola del servidor.
     console.error(
       "Error obteniendo datos del sistema:",
       error
     );
 
-    // Respondemos con código HTTP 500.
     res.status(500).json({
       error:
         "No se pudo obtener la información del sistema"
@@ -201,30 +148,29 @@ app.get("/api/sistema", async (req, res) => {
 // API DE EVENTOS
 // ----------------------------------------------------
 
-// Devuelve el historial de alertas guardadas.
+// Devuelve el historial.
 //
-// URL:
+// GET:
 // http://localhost:3000/api/eventos
 app.get("/api/eventos", async (req, res) => {
 
   try {
 
-    // Leemos el contenido de events.json.
-    const eventos = await obtenerEventos();
+    const eventos =
+      await obtenerEventos();
 
-    // Lo devolvemos como JSON.
     res.json(eventos);
 
   } catch (error) {
 
     console.error(
-      "Error obteniendo historial de eventos:",
+      "Error obteniendo historial:",
       error
     );
 
     res.status(500).json({
       error:
-        "No se pudo obtener el historial de eventos"
+        "No se pudo obtener el historial"
     });
 
   }
@@ -233,88 +179,138 @@ app.get("/api/eventos", async (req, res) => {
 
 
 // ----------------------------------------------------
-// SOCKET.IO - CONEXIONES EN TIEMPO REAL
+// API DE CONFIGURACIÓN - CONSULTAR
 // ----------------------------------------------------
 
-// Se ejecuta cada vez que un cliente
-// se conecta mediante Socket.IO.
+// Devuelve los umbrales actuales.
+//
+// GET:
+// http://localhost:3000/api/config/umbrales
+app.get(
+  "/api/config/umbrales",
+  async (req, res) => {
+
+    try {
+
+      const umbrales =
+        await obtenerUmbrales();
+
+      res.json(umbrales);
+
+    } catch (error) {
+
+      console.error(
+        "Error obteniendo umbrales:",
+        error
+      );
+
+      res.status(500).json({
+        error:
+          "No se pudieron obtener los umbrales"
+      });
+
+    }
+
+  }
+);
+
+
+// ----------------------------------------------------
+// API DE CONFIGURACIÓN - MODIFICAR
+// ----------------------------------------------------
+
+// Permite cambiar los umbrales.
+//
+// PUT:
+// http://localhost:3000/api/config/umbrales
+app.put(
+  "/api/config/umbrales",
+  async (req, res) => {
+
+    try {
+
+      // req.body contiene el JSON enviado
+      // por el frontend.
+      const nuevosUmbrales =
+        req.body;
+
+      // Validamos y guardamos.
+      const resultado =
+        await guardarUmbrales(
+          nuevosUmbrales
+        );
+
+      res.json({
+        mensaje:
+          "Umbrales actualizados correctamente",
+
+        umbrales: resultado
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Error actualizando umbrales:",
+        error
+      );
+
+      // 400 significa que el cliente envió
+      // datos inválidos.
+      res.status(400).json({
+        error:
+          "Configuración de umbrales inválida"
+      });
+
+    }
+
+  }
+);
+
+
+// ----------------------------------------------------
+// SOCKET.IO
+// ----------------------------------------------------
+
 io.on("connection", (socket) => {
 
-  // Mostramos el ID del cliente conectado.
   console.log(
     "Cliente conectado:",
     socket.id
   );
 
 
-  // --------------------------------------------------
-  // ENVÍO AUTOMÁTICO DE MÉTRICAS
-  // --------------------------------------------------
-
-  // Cada 2 segundos obtenemos métricas nuevas
-  // y las enviamos al frontend.
+  // Enviamos métricas cada 2 segundos.
   const intervalo = setInterval(
     async () => {
 
       try {
 
-        // ----------------------------------------------
-        // 1. OBTENER MÉTRICAS
-        // ----------------------------------------------
-
+        // Métricas.
         const datos =
           await obtenerDatosSistema();
 
-
-        // ----------------------------------------------
-        // 2. OBTENER SERVICIOS
-        // ----------------------------------------------
-
+        // Servicios.
         const servicios =
           await obtenerServicios();
 
-
-        // ----------------------------------------------
-        // 3. UNIR INFORMACIÓN
-        // ----------------------------------------------
-
+        // Unimos la información.
         const datosConServicios = {
           ...datos,
           servicios
         };
 
-
-        // ----------------------------------------------
-        // 4. ANALIZAR ALERTAS
-        // ----------------------------------------------
-
-        // También usamos await acá porque
-        // alertService lee los umbrales
-        // desde thresholds.json.
+        // Analizamos estados y alertas.
         const datosAnalizados =
           await analizarEstadoSistema(
             datosConServicios
           );
 
-
-        // ----------------------------------------------
-        // 5. GUARDAR EVENTOS
-        // ----------------------------------------------
-
+        // Guardamos alertas.
         await registrarEventos(
           datosAnalizados.alertas
         );
 
-
-        // ----------------------------------------------
-        // 6. ENVIAR AL FRONTEND
-        // ----------------------------------------------
-
-        // Enviamos el evento llamado "metricas".
-        //
-        // Lucio puede recibirlo usando:
-        //
-        // socket.on("metricas", ...)
+        // Enviamos todo al frontend.
         socket.emit(
           "metricas",
           datosAnalizados
@@ -330,16 +326,11 @@ io.on("connection", (socket) => {
       }
 
     },
-
-    // Se ejecuta cada 2000 milisegundos.
     2000
   );
 
 
-  // --------------------------------------------------
-  // DESCONEXIÓN DEL CLIENTE
-  // --------------------------------------------------
-
+  // Cuando el cliente se desconecta.
   socket.on("disconnect", () => {
 
     console.log(
@@ -347,8 +338,6 @@ io.on("connection", (socket) => {
       socket.id
     );
 
-    // Eliminamos el intervalo para que
-    // no siga ejecutándose innecesariamente.
     clearInterval(intervalo);
 
   });
@@ -360,12 +349,6 @@ io.on("connection", (socket) => {
 // INICIAR SERVIDOR
 // ----------------------------------------------------
 
-// Iniciamos el servidor HTTP.
-//
-// Usamos httpServer.listen()
-// y no app.listen()
-// porque Express y Socket.IO
-// comparten este servidor.
 httpServer.listen(PORT, () => {
 
   console.log(
