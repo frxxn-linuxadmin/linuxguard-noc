@@ -1,4 +1,8 @@
 
+const historialCPU = [];
+const historialRAM = [];
+const MAX_MEDICIONES = 20;
+
 function actualizarBarra(recurso, valor) {
     const barra = document.getElementById("barra-" + recurso);
 
@@ -81,10 +85,87 @@ function actualizarRecursos() {
     actualizarBarra("cpu", cpu);
     actualizarBarra("ram", ram);
     actualizarBarra("disco", disco);
+    
+    // Guardar las mediciones
+    guardarMedicion(historialCPU, cpu);
+    guardarMedicion(historialRAM, ram);
+
+    // Dibujar los gráficos
+    dibujarGrafico("grafico-cpu", historialCPU, "#38bdf8");
+    dibujarGrafico("grafico-ram", historialRAM, "#22c55e");
 
     // Comprobamos si hay alertas
     verificarAlertas(cpu, ram, disco);
 }
 
+actualizarRecursos();
+setInterval(actualizarRecursos, 3000);
+
+
+function guardarMedicion(historial, valor) {
+    historial.push(valor);
+
+    if (historial.length > MAX_MEDICIONES) {
+        historial.shift();
+    }
+}
+
+function dibujarGrafico(idCanvas, datos, color) {
+    const canvas = document.getElementById(idCanvas);
+
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) return;
+
+    const ancho = canvas.width;
+    const alto = canvas.height;
+    const margen = 35;
+
+    // Limpiar el gráfico anterior
+    ctx.clearRect(0, 0, ancho, alto);
+
+    // Dibujar líneas horizontales
+    ctx.strokeStyle = "#334155";
+    ctx.lineWidth = 1;
+
+    for (let porcentaje = 0; porcentaje <= 100; porcentaje += 25) {
+        const y = alto - margen -
+            (porcentaje / 100) * (alto - 2 * margen);
+
+        ctx.beginPath();
+        ctx.moveTo(margen, y);
+        ctx.lineTo(ancho - margen, y);
+        ctx.stroke();
+
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "12px Arial";
+        ctx.fillText(porcentaje + "%", 2, y + 4);
+    }
+
+    if (datos.length === 0) return;
+
+    // Dibujar el historial
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+
+    datos.forEach(function(valor, indice) {
+        const x = margen + indice *
+            (ancho - 2 * margen) / (MAX_MEDICIONES - 1);
+
+        const y = alto - margen -
+            (valor / 100) * (alto - 2 * margen);
+
+        if (indice === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    });
+
+    ctx.stroke();
+}
 actualizarRecursos();
 setInterval(actualizarRecursos, 3000);

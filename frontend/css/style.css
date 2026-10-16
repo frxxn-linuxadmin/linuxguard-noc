@@ -159,3 +159,39 @@ footer {
     background-color: #7f1d1d;
     border-color: #ef4444;
 }
+
+/* Gráficos de monitoreo */
+
+.contenedor-graficos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+#graficos .tarjeta-grafico {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 20px;
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+}
+
+.tarjeta-grafico h3 {
+    color: #38bdf8;
+}
+
+.tarjeta-grafico canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* Adaptación para celulares */
+@media (max-width: 700px) {
+    .contenedor-graficos {
+        grid-template-columns: 1fr;
+    }
+}
