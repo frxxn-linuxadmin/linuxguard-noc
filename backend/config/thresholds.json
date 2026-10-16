@@ -1,0 +1,18 @@
+{
+  "cpu": {
+    "advertencia": 70,
+    "critico": 90
+  },
+  "memoria": {
+    "advertencia": 75,
+    "critico": 90
+  },
+  "temperatura": {
+    "advertencia": 70,
+    "critico": 85
+  },
+  "disco": {
+    "advertencia": 80,
+    "critico": 90
+  }
+}

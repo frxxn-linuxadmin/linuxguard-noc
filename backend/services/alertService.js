@@ -2,18 +2,26 @@
 // y determina si cada recurso está en estado normal,
 // advertencia o crítico.
 
+// Importamos la configuración de umbrales desde configService.js.
+import { obtenerUmbrales } from "./configService.js";
+
+
 // ----------------------------------------------------
-// FUNCIÓN PARA DETERMINAR EL ESTADO DE UN PORCENTAJE
+// FUNCIÓN PARA DETERMINAR EL ESTADO
 // ----------------------------------------------------
 
 // Recibe:
-// valor = porcentaje actual
-// advertencia = límite a partir del cual avisamos
-// critico = límite a partir del cual consideramos crítico
+// valor = valor actual del recurso
+// advertencia = límite desde el cual avisamos
+// critico = límite desde el cual consideramos crítico
 function obtenerEstado(valor, advertencia, critico) {
 
-  // Si no tenemos un valor válido, devolvemos desconocido.
-  if (valor === null || valor === undefined || Number.isNaN(valor)) {
+  // Si no tenemos un valor válido, devolvemos "desconocido".
+  if (
+    valor === null ||
+    valor === undefined ||
+    Number.isNaN(valor)
+  ) {
     return "desconocido";
   }
 
@@ -27,8 +35,7 @@ function obtenerEstado(valor, advertencia, critico) {
     return "advertencia";
   }
 
-  // Si no supera ninguno de los límites anteriores,
-  // consideramos que el recurso funciona normalmente.
+  // Si no supera ningún límite.
   return "normal";
 }
 
@@ -37,7 +44,12 @@ function obtenerEstado(valor, advertencia, critico) {
 // ANALIZAR MÉTRICAS DEL SISTEMA
 // ----------------------------------------------------
 
-export function analizarEstadoSistema(datos) {
+// La función ahora es async porque necesita leer
+// el archivo thresholds.json mediante obtenerUmbrales().
+export async function analizarEstadoSistema(datos) {
+
+  // Leemos los umbrales configurados.
+  const umbrales = await obtenerUmbrales();
 
   // Array donde vamos a guardar las alertas detectadas.
   const alertas = [];
@@ -49,8 +61,8 @@ export function analizarEstadoSistema(datos) {
 
   const estadoCpu = obtenerEstado(
     datos.cpu.usoPorcentaje,
-    70,
-    90
+    umbrales.cpu.advertencia,
+    umbrales.cpu.critico
   );
 
   if (estadoCpu !== "normal") {
@@ -70,13 +82,14 @@ export function analizarEstadoSistema(datos) {
   const porcentajeMemoria =
     (datos.memoria.usada / datos.memoria.total) * 100;
 
+  // Redondeamos a dos decimales.
   const porcentajeMemoriaRedondeado =
     Number(porcentajeMemoria.toFixed(2));
 
   const estadoMemoria = obtenerEstado(
     porcentajeMemoriaRedondeado,
-    75,
-    90
+    umbrales.memoria.advertencia,
+    umbrales.memoria.critico
   );
 
   if (estadoMemoria !== "normal") {
@@ -95,8 +108,8 @@ export function analizarEstadoSistema(datos) {
 
   const estadoTemperatura = obtenerEstado(
     datos.cpu.temperatura,
-    70,
-    85
+    umbrales.temperatura.advertencia,
+    umbrales.temperatura.critico
   );
 
   if (
@@ -120,8 +133,8 @@ export function analizarEstadoSistema(datos) {
 
     const estado = obtenerEstado(
       disco.usoPorcentaje,
-      80,
-      90
+      umbrales.disco.advertencia,
+      umbrales.disco.critico
     );
 
     // Si el disco está en advertencia o crítico,
@@ -135,7 +148,7 @@ export function analizarEstadoSistema(datos) {
       });
     }
 
-    // Conservamos toda la información original del disco
+    // Conservamos los datos originales del disco
     // y agregamos su estado.
     return {
       ...disco,
@@ -152,13 +165,19 @@ export function analizarEstadoSistema(datos) {
 
   // Si existe al menos una alerta crítica,
   // todo el sistema se considera crítico.
-  if (alertas.some((alerta) => alerta.nivel === "critico")) {
+  if (
+    alertas.some(
+      (alerta) => alerta.nivel === "critico"
+    )
+  ) {
     estadoGeneral = "critico";
 
   // Si no hay críticas pero sí advertencias,
-  // el estado general pasa a advertencia.
+  // el sistema queda en advertencia.
   } else if (
-    alertas.some((alerta) => alerta.nivel === "advertencia")
+    alertas.some(
+      (alerta) => alerta.nivel === "advertencia"
+    )
   ) {
     estadoGeneral = "advertencia";
   }

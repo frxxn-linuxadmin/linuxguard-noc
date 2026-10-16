@@ -1,31 +1,35 @@
-// Importamos Express para crear el servidor web.
+// ----------------------------------------------------
+// IMPORTACIONES
+// ----------------------------------------------------
+
+// Express crea el servidor web y las rutas HTTP.
 import express from "express";
 
-// Importamos CORS para permitir conexiones desde otro origen.
-// Por ejemplo, desde el frontend de Lucio.
+// CORS permite que el frontend pueda conectarse
+// desde otro origen, por ejemplo otra PC o puerto.
 import cors from "cors";
 
-// Importamos createServer para crear un servidor HTTP real.
-// Socket.IO necesita trabajar sobre este servidor HTTP.
+// createServer crea el servidor HTTP real
+// que van a compartir Express y Socket.IO.
 import { createServer } from "http";
 
-// Importamos Server desde Socket.IO.
-// Esto nos permite crear el servidor WebSocket.
+// Server es el servidor de Socket.IO.
 import { Server } from "socket.io";
 
-// Importamos la función que obtiene las métricas del sistema.
+// Obtiene métricas reales del sistema:
+// CPU, RAM, discos, red, procesos, uptime, etc.
 import { obtenerDatosSistema } from "./services/systemService.js";
 
-// Importamos la función que analiza métricas
-// y genera estados y alertas.
+// Analiza las métricas y determina estados:
+// normal, advertencia o crítico.
 import { analizarEstadoSistema } from "./services/alertService.js";
 
-// Importamos la función que consulta servicios de Linux.
+// Consulta el estado de servicios Linux
+// como ssh, apache2 y nginx.
 import { obtenerServicios } from "./services/serviceMonitor.js";
 
-
-// Importamos las funciones para guardar
-// y consultar el historial de eventos.
+// Funciones para guardar y consultar
+// el historial de eventos y alertas.
 import {
   registrarEventos,
   obtenerEventos
@@ -39,13 +43,13 @@ import {
 // Creamos la aplicación Express.
 const app = express();
 
-// Puerto donde funcionará LinuxGuard NOC.
+// Puerto donde funcionará el backend.
 const PORT = 3000;
 
-// Permitimos conexiones desde otros orígenes.
+// Activamos CORS.
 app.use(cors());
 
-// Permitimos que Express pueda recibir JSON.
+// Permitimos recibir información en formato JSON.
 app.use(express.json());
 
 
@@ -53,11 +57,12 @@ app.use(express.json());
 // SERVIDOR HTTP
 // ----------------------------------------------------
 
-// Creamos el servidor HTTP.
+// Creamos un servidor HTTP utilizando Express.
 //
-// Express manejará las rutas HTTP y Socket.IO
-// utilizará este mismo servidor para las conexiones
-// en tiempo real.
+// Este servidor será compartido por:
+//
+// - Express para la API REST.
+// - Socket.IO para comunicación en tiempo real.
 const httpServer = createServer(app);
 
 
@@ -65,15 +70,19 @@ const httpServer = createServer(app);
 // SOCKET.IO
 // ----------------------------------------------------
 
-// Creamos Socket.IO sobre nuestro servidor HTTP.
+// Creamos el servidor Socket.IO.
 const io = new Server(httpServer, {
+
   cors: {
-    // Durante desarrollo permitimos cualquier origen.
+
+    // Durante el desarrollo aceptamos conexiones
+    // desde cualquier origen.
     origin: "*",
 
-    // Métodos HTTP permitidos.
+    // Métodos permitidos.
     methods: ["GET", "POST"]
   }
+
 });
 
 
@@ -81,7 +90,8 @@ const io = new Server(httpServer, {
 // RUTA PRINCIPAL
 // ----------------------------------------------------
 
-// Ruta simple para comprobar que el backend funciona.
+// Sirve para verificar rápidamente
+// que el backend esté funcionando.
 //
 // URL:
 // http://localhost:3000/
@@ -96,64 +106,96 @@ app.get("/", (req, res) => {
 
 
 // ----------------------------------------------------
-// API DEL SISTEMA
+// API PRINCIPAL DEL SISTEMA
 // ----------------------------------------------------
 
-// Endpoint principal.
+// Devuelve todas las métricas actuales.
 //
 // URL:
 // http://localhost:3000/api/sistema
-//
-// Devuelve las métricas actuales del sistema,
-// servicios, estados y alertas.
 app.get("/api/sistema", async (req, res) => {
 
   try {
 
-    // Obtenemos CPU, RAM, discos, red,
-    // procesos, temperatura, etc.
+    // ------------------------------------------------
+    // 1. OBTENER MÉTRICAS
+    // ------------------------------------------------
+
+    // Obtenemos información del sistema:
+    // CPU, RAM, discos, red, procesos, etc.
     const datos = await obtenerDatosSistema();
 
-    // Consultamos el estado de los servicios Linux.
+
+    // ------------------------------------------------
+    // 2. OBTENER SERVICIOS
+    // ------------------------------------------------
+
+    // Consultamos servicios de Linux.
     const servicios = await obtenerServicios();
 
-    // Unimos las métricas con los servicios.
-    //
-    // "...datos" copia todo el contenido
-    // del objeto datos.
+
+    // ------------------------------------------------
+    // 3. UNIR INFORMACIÓN
+    // ------------------------------------------------
+
+    // Creamos un nuevo objeto que contiene
+    // todas las métricas y además los servicios.
     const datosConServicios = {
       ...datos,
       servicios
     };
 
-// Analizamos las métricas y generamos
-// estados y alertas.
-const datosAnalizados =
-  analizarEstadoSistema(datosConServicios);
 
-// Guardamos en el historial las alertas detectadas.
-await registrarEventos(datosAnalizados.alertas);
+    // ------------------------------------------------
+    // 4. ANALIZAR ALERTAS
+    // ------------------------------------------------
 
-// Enviamos la respuesta completa al navegador.
-res.json(datosAnalizados);
+    // Analizamos las métricas usando los umbrales
+    // definidos en config/thresholds.json.
+    //
+    // Ahora usamos await porque
+    // analizarEstadoSistema() es async.
+    const datosAnalizados =
+      await analizarEstadoSistema(datosConServicios);
+
+
+    // ------------------------------------------------
+    // 5. GUARDAR EVENTOS
+    // ------------------------------------------------
+
+    // Si se detectaron alertas nuevas,
+    // las guardamos en data/events.json.
+    await registrarEventos(
+      datosAnalizados.alertas
+    );
+
+
+    // ------------------------------------------------
+    // 6. RESPONDER AL CLIENTE
+    // ------------------------------------------------
+
+    // Enviamos toda la información en formato JSON.
+    res.json(datosAnalizados);
 
   } catch (error) {
 
     // Si algo falla, mostramos el error
-    // en la terminal del backend.
+    // en la consola del servidor.
     console.error(
       "Error obteniendo datos del sistema:",
       error
     );
 
-    // Respondemos HTTP 500 al cliente.
+    // Respondemos con código HTTP 500.
     res.status(500).json({
-      error: "No se pudo obtener la información del sistema"
+      error:
+        "No se pudo obtener la información del sistema"
     });
 
   }
 
 });
+
 
 // ----------------------------------------------------
 // API DE EVENTOS
@@ -167,10 +209,10 @@ app.get("/api/eventos", async (req, res) => {
 
   try {
 
-    // Leemos los eventos guardados.
+    // Leemos el contenido de events.json.
     const eventos = await obtenerEventos();
 
-    // Los enviamos al cliente en formato JSON.
+    // Lo devolvemos como JSON.
     res.json(eventos);
 
   } catch (error) {
@@ -181,67 +223,123 @@ app.get("/api/eventos", async (req, res) => {
     );
 
     res.status(500).json({
-      error: "No se pudo obtener el historial de eventos"
+      error:
+        "No se pudo obtener el historial de eventos"
     });
 
   }
 
 });
 
+
 // ----------------------------------------------------
-// SOCKET.IO
+// SOCKET.IO - CONEXIONES EN TIEMPO REAL
 // ----------------------------------------------------
 
 // Se ejecuta cada vez que un cliente
 // se conecta mediante Socket.IO.
 io.on("connection", (socket) => {
 
-  // Mostramos el ID único del cliente conectado.
-  console.log("Cliente conectado:", socket.id);
+  // Mostramos el ID del cliente conectado.
+  console.log(
+    "Cliente conectado:",
+    socket.id
+  );
 
 
-  // Cada 2 segundos obtenemos información nueva.
-  const intervalo = setInterval(async () => {
+  // --------------------------------------------------
+  // ENVÍO AUTOMÁTICO DE MÉTRICAS
+  // --------------------------------------------------
 
-    try {
+  // Cada 2 segundos obtenemos métricas nuevas
+  // y las enviamos al frontend.
+  const intervalo = setInterval(
+    async () => {
 
-      // Obtenemos métricas actualizadas.
-      const datos = await obtenerDatosSistema();
+      try {
 
-      // Obtenemos también los servicios Linux.
-      const servicios = await obtenerServicios();
+        // ----------------------------------------------
+        // 1. OBTENER MÉTRICAS
+        // ----------------------------------------------
 
-      // Unimos métricas y servicios.
-      const datosConServicios = {
-        ...datos,
-        servicios
-      };
-
-// Analizamos estados y alertas.
-const datosAnalizados =
-  analizarEstadoSistema(datosConServicios);
-
-// Guardamos las alertas nuevas
-// en el historial.
-await registrarEventos(datosAnalizados.alertas);
-
-// Enviamos las métricas al cliente
-// mediante el evento "metricas".
-socket.emit("metricas", datosAnalizados);
-
-    } catch (error) {
-
-      console.error(
-        "Error enviando métricas por Socket.IO:",
-        error
-      );
-
-    }
-
-  }, 2000);
+        const datos =
+          await obtenerDatosSistema();
 
 
-  // Se ejecuta cuando el cliente se desconecta.
+        // ----------------------------------------------
+        // 2. OBTENER SERVICIOS
+        // ----------------------------------------------
+
+        const servicios =
+          await obtenerServicios();
+
+
+        // ----------------------------------------------
+        // 3. UNIR INFORMACIÓN
+        // ----------------------------------------------
+
+        const datosConServicios = {
+          ...datos,
+          servicios
+        };
+
+
+        // ----------------------------------------------
+        // 4. ANALIZAR ALERTAS
+        // ----------------------------------------------
+
+        // También usamos await acá porque
+        // alertService lee los umbrales
+        // desde thresholds.json.
+        const datosAnalizados =
+          await analizarEstadoSistema(
+            datosConServicios
+          );
+
+
+        // ----------------------------------------------
+        // 5. GUARDAR EVENTOS
+        // ----------------------------------------------
+
+        await registrarEventos(
+          datosAnalizados.alertas
+        );
+
+
+        // ----------------------------------------------
+        // 6. ENVIAR AL FRONTEND
+        // ----------------------------------------------
+
+        // Enviamos el evento llamado "metricas".
+        //
+        // Lucio puede recibirlo usando:
+        //
+        // socket.on("metricas", ...)
+        socket.emit(
+          "metricas",
+          datosAnalizados
+        );
+
+      } catch (error) {
+
+        console.error(
+          "Error enviando métricas por Socket.IO:",
+          error
+        );
+
+      }
+
+    },
+
+    // Se ejecuta cada 2000 milisegundos.
+    2000
+  );
+
+
+  // --------------------------------------------------
+  // DESCONEXIÓN DEL CLIENTE
+  // --------------------------------------------------
+
   socket.on("disconnect", () => {
 
     console.log(
@@ -249,8 +347,8 @@ socket.emit("metricas", datosAnalizados);
       socket.id
     );
 
-    // Detenemos el intervalo correspondiente
-    // a este cliente.
+    // Eliminamos el intervalo para que
+    // no siga ejecutándose innecesariamente.
     clearInterval(intervalo);
 
   });
@@ -264,9 +362,10 @@ socket.emit("metricas", datosAnalizados);
 
 // Iniciamos el servidor HTTP.
 //
-// Como Socket.IO y Express comparten el mismo
-// servidor, usamos httpServer.listen()
-// y no app.listen().
+// Usamos httpServer.listen()
+// y no app.listen()
+// porque Express y Socket.IO
+// comparten este servidor.
 httpServer.listen(PORT, () => {
 
   console.log(
