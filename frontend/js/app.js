@@ -16,7 +16,7 @@ function actualizarBarra(recurso, valor) {
         barra.style.backgroundColor = "#22c55e";
     }
 }
-
+   
 function verificarAlertas(cpu, ram, disco) {
     const lista = document.getElementById("lista-alertas");
 
@@ -97,9 +97,6 @@ function actualizarRecursos() {
     // Comprobamos si hay alertas
     verificarAlertas(cpu, ram, disco);
 }
-
-actualizarRecursos();
-setInterval(actualizarRecursos, 3000);
 
 
 function guardarMedicion(historial, valor) {
