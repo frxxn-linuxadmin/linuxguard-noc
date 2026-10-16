@@ -195,3 +195,71 @@ footer {
         grid-template-columns: 1fr;
     }
 }
+
+/* Historial de alertas */
+
+.tabla-contenedor {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 20px;
+    border-radius: 10px;
+    border: 1px solid #334155;
+}
+
+#historial-alertas table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #1e293b;
+    text-align: left;
+}
+
+#historial-alertas th,
+#historial-alertas td {
+    padding: 15px;
+    border-bottom: 1px solid #334155;
+}
+
+#historial-alertas th {
+    background-color: #334155;
+    color: #38bdf8;
+}
+
+#historial-alertas td {
+    color: #f1f5f9;
+}
+
+#historial-alertas tbody tr:hover {
+    background-color: #273449;
+}
+
+/* Botón para borrar historial */
+
+#borrar-historial {
+    margin-top: 20px;
+    padding: 12px 20px;
+    background-color: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+#borrar-historial:hover {
+    background-color: #b91c1c;
+}
+
+#borrar-historial:focus-visible {
+    outline: 2px solid #38bdf8;
+    outline-offset: 3px;
+}
+
+/* Adaptación a celulares */
+
+@media (max-width: 600px) {
+    #historial-alertas th,
+    #historial-alertas td {
+        padding: 10px;
+        font-size: 12px;
+    }
+}

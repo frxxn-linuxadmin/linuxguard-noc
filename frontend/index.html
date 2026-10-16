@@ -99,6 +99,33 @@
             <p>Verificando recursos del servidor...</p>
             </div>
         </section>
+        
+        <section id="historial-alertas">
+            <h2>Historial de alertas</h2>
+            <p>Registro de eventos detectados durante el monitoreo.</p>
+
+            <div class="tabla-contenedor">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Hora</th>
+                            <th>Recurso</th>
+                            <th>Uso</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-historial">
+                    <tr>
+                        <td colspan="4">Sin alertas registradas.</td>
+                    </tr>
+                </tbody>
+                </table>
+            </div>
+
+            <button id="borrar-historial" type="button">
+                Borrar historial
+            </button>
+        </section>
 
     </main>
 
