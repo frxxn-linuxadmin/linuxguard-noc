@@ -263,3 +263,88 @@ footer {
         font-size: 12px;
     }
 }
+
+/* Configuración de alertas */
+
+#configuracion {
+    background-color: #1e293b;
+    padding: 25px;
+    border-radius: 10px;
+    border: 1px solid #334155;
+}
+
+#configuracion h2 {
+    color: #38bdf8;
+}
+
+#form-configuracion {
+    margin-top: 20px;
+}
+
+.campo-configuracion {
+    margin-bottom: 20px;
+}
+
+.campo-configuracion label {
+    display: block;
+    margin-bottom: 8px;
+    color: #f1f5f9;
+    font-weight: bold;
+}
+
+.campo-configuracion input {
+    width: 100%;
+    max-width: 300px;
+    padding: 12px;
+    background-color: #0f172a;
+    color: white;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.campo-configuracion input:focus {
+    outline: 2px solid #38bdf8;
+    outline-offset: 2px;
+}
+
+/* Botón guardar configuración */
+
+#guardar-configuracion {
+    background-color: #0284c7;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+#guardar-configuracion:hover {
+    background-color: #0369a1;
+}
+
+#guardar-configuracion:focus-visible {
+    outline: 2px solid #38bdf8;
+    outline-offset: 3px;
+}
+
+/* Mensaje de confirmación */
+
+#mensaje-configuracion {
+    margin-top: 15px;
+    color: #22c55e;
+    font-weight: bold;
+}
+
+/* Adaptación para celulares */
+
+@media (max-width: 600px) {
+    #configuracion {
+        padding: 15px;
+    }
+
+    .campo-configuracion input {
+        max-width: 100%;
+    }
+}

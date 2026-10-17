@@ -126,6 +126,53 @@
                 Borrar historial
             </button>
         </section>
+        
+        <section id="configuracion">
+            <h2>Configuración de alertas</h2>
+
+            <p>
+                Personalizá los límites de utilización
+                de recursos del servidor.
+            </p>
+
+            <form id="form-configuracion">
+                <div class="campo-configuracion">
+                    <label for="umbral-advertencia">
+                        Umbral de advertencia (%)
+                    </label>
+
+                    <input
+                        type="number"
+                        id="umbral-advertencia"
+                        min="1"
+                        max="98"
+                        value="60"
+                        required
+                    >
+                </div>
+
+                <div class="campo-configuracion">
+                    <label for="umbral-critico">
+                        Umbral crítico (%)
+                    </label>
+
+                    <input
+                        type="number"
+                        id="umbral-critico"
+                        min="2"
+                        max="100"
+                        value="80"
+                        required
+                    >
+                </div>
+
+                <button type="submit" id="guardar-configuracion">
+                    Guardar configuración
+                </button>
+
+                <p id="mensaje-configuracion" aria-live="polite"></p>
+            </form>
+        </section>
 
     </main>
 

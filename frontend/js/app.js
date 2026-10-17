@@ -6,6 +6,33 @@ const MAX_MEDICIONES = 20;
 const CLAVE_HISTORIAL = "linuxguard_historial_alertas";
 const MAX_ALERTAS = 100;
 
+const CLAVE_UMBRALES = "linuxguard_umbrales";
+
+let umbralAdvertencia = 60;
+let umbralCritico = 80;
+
+// Recuperar la configuración guardada
+try {
+    const configuracion = JSON.parse(
+        localStorage.getItem(CLAVE_UMBRALES)
+    );
+
+    if (
+        configuracion &&
+        Number.isInteger(configuracion.advertencia) &&
+        Number.isInteger(configuracion.critico) &&
+        configuracion.advertencia >= 1 &&
+        configuracion.critico <= 100 &&
+        configuracion.advertencia < configuracion.critico
+    ) {
+        umbralAdvertencia = configuracion.advertencia;
+        umbralCritico = configuracion.critico;
+    }
+} catch (error) {
+    console.error("Error al recuperar los umbrales:", error);
+}
+
+
 // Recuperamos los registros guardados en el navegador
 let historialAlertas = [];
 
@@ -30,9 +57,9 @@ function actualizarBarra(recurso, valor) {
 
     barra.style.width = valor + "%";
 
-    if (valor >= 80) {
+    if (valor >= umbralCritico) {
         barra.style.backgroundColor = "#ef4444";
-    } else if (valor >= 60) {
+    } else if (valor >= umbralAdvertencia) {
         barra.style.backgroundColor = "#f59e0b";
     } else {
         barra.style.backgroundColor = "#22c55e";
@@ -305,6 +332,76 @@ mostrarHistorial();
 // Activar el botón de borrado
 document.getElementById("borrar-historial")
     .addEventListener("click", borrarHistorial);
+
+  
+function guardarConfiguracion(evento) {
+    evento.preventDefault();
+
+    const advertencia = Number(
+        document.getElementById("umbral-advertencia").value
+    );
+
+    const critico = Number(
+        document.getElementById("umbral-critico").value
+    );
+
+    const mensaje = document.getElementById(
+        "mensaje-configuracion"
+    );
+
+    if (
+        !Number.isInteger(advertencia) ||
+        !Number.isInteger(critico) ||
+        advertencia < 1 ||
+        advertencia >= critico ||
+        critico > 100
+    ) {
+        mensaje.textContent =
+            "La advertencia debe ser menor que el nivel crítico.";
+        mensaje.style.color = "#ef4444";
+        return;
+    }
+
+    try {
+        localStorage.setItem(
+            CLAVE_UMBRALES,
+            JSON.stringify({
+                advertencia: advertencia,
+                critico: critico
+            })
+        );
+    } catch (error) {
+        mensaje.textContent =
+            "No se pudo guardar la configuración.";
+        mensaje.style.color = "#ef4444";
+        return;
+    }
+
+    umbralAdvertencia = advertencia;
+    umbralCritico = critico;
+
+    mensaje.textContent = "Configuración guardada correctamente.";
+    mensaje.style.color = "#22c55e";
+
+    // Reiniciar estados para evaluar los nuevos límites
+    Object.keys(estadosAnteriores).forEach(function(recurso) {
+        delete estadosAnteriores[recurso];
+    });
+
+    actualizarRecursos();
+}
+  
+// Mostrar en el formulario los umbrales guardados
+document.getElementById("umbral-advertencia").value =
+    umbralAdvertencia;
+
+document.getElementById("umbral-critico").value =
+    umbralCritico;
+
+// Escuchar el envío del formulario
+document.getElementById("form-configuracion")
+    .addEventListener("submit", guardarConfiguracion);
+
 
 // Iniciar monitoreo simulado
 actualizarRecursos();
