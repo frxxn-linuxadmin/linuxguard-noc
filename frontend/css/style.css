@@ -348,3 +348,42 @@ footer {
         max-width: 100%;
     }
 }
+
+/* Estado general del servidor */
+
+#panel-estado {
+    padding: 25px;
+    border-radius: 10px;
+    border: 2px solid;
+    background-color: #1e293b;
+    transition: border-color 0.3s ease;
+}
+
+#panel-estado h3 {
+    margin-top: 0;
+    font-size: 24px;
+}
+
+.estado-normal {
+    border-color: #22c55e !important;
+}
+
+.estado-normal h3 {
+    color: #22c55e;
+}
+
+.estado-advertencia {
+    border-color: #f59e0b !important;
+}
+
+.estado-advertencia h3 {
+    color: #f59e0b;
+}
+
+.estado-critico {
+    border-color: #ef4444 !important;
+}
+
+.estado-critico h3 {
+    color: #ef4444;
+}

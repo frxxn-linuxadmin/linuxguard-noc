@@ -147,6 +147,36 @@ function agregarAlerta(mensaje, tipo) {
     lista.appendChild(alerta);
 }
 
+
+function actualizarEstadoGeneral(cpu, ram, disco) {
+    const panel = document.getElementById("panel-estado");
+    const texto = document.getElementById("texto-estado");
+    const descripcion = document.getElementById("descripcion-estado");
+
+    // Tomamos el recurso con mayor utilización
+    const mayorUso = Math.max(cpu, ram, disco);
+
+    if (mayorUso >= umbralCritico) {
+        panel.className = "estado-critico";
+        texto.textContent = "CRÍTICO";
+        descripcion.textContent =
+            "Se detectaron recursos en estado crítico.";
+
+    } else if (mayorUso >= umbralAdvertencia) {
+        panel.className = "estado-advertencia";
+        texto.textContent = "ADVERTENCIA";
+        descripcion.textContent =
+            "Se detectó un uso elevado de recursos.";
+
+    } else {
+        panel.className = "estado-normal";
+        texto.textContent = "NORMAL";
+        descripcion.textContent =
+            "Todos los recursos están dentro de los límites normales.";
+    }
+}
+
+
 function actualizarRecursos() {
     // Datos simulados
     const cpu = Math.floor(Math.random() * 101);
@@ -168,6 +198,10 @@ function actualizarRecursos() {
     actualizarBarra("cpu", cpu);
     actualizarBarra("ram", ram);
     actualizarBarra("disco", disco);
+    
+// Actualizar el estado general del servidor
+actualizarEstadoGeneral(cpu, ram, disco);
+
     
     // Guardar las mediciones
     guardarMedicion(historialCPU, cpu);
