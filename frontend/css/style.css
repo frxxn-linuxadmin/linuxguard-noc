@@ -537,3 +537,54 @@ section {
     color: #38bdf8;
     font-weight: bold;
 }
+
+/* Información general del servidor */
+
+.datos-servidor {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.dato-servidor {
+    min-width: 0;
+    padding: 20px;
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+}
+
+.dato-servidor h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: #38bdf8;
+    font-size: 16px;
+}
+
+.dato-servidor p {
+    margin: 0;
+    color: #f1f5f9;
+    font-size: 15px;
+    overflow-wrap: anywhere;
+}
+
+/* Adaptación a tablets */
+
+@media (max-width: 900px) {
+    .datos-servidor {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Adaptación a celulares */
+
+@media (max-width: 600px) {
+    .datos-servidor {
+        grid-template-columns: 1fr;
+    }
+
+    .dato-servidor {
+        padding: 15px;
+    }
+}
