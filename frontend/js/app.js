@@ -179,6 +179,12 @@ function actualizarEstadoGeneral(cpu, ram, disco) {
 
 
 function actualizarRecursos() {
+    
+    // No actualizar métricas si el servidor está desconectado
+    if (!servidorConectado) {
+        return;
+    }
+
     // Datos simulados
     const cpu = Math.floor(Math.random() * 101);
     const ram = Math.floor(Math.random() * 101);
@@ -217,6 +223,7 @@ actualizarEstadoGeneral(cpu, ram, disco);
     // Comprobamos si hay alertas
     verificarAlertas(cpu, ram, disco);
 }
+
 function cambiarConexion() {
     servidorConectado = !servidorConectado;
 
@@ -224,23 +231,35 @@ function cambiarConexion() {
     const texto = document.getElementById("texto-conexion");
     const descripcion = document.getElementById("descripcion-conexion");
     const boton = document.getElementById("simular-conexion");
+    const aviso = document.getElementById("aviso-desconexion");
 
     if (servidorConectado) {
         panel.className = "conexion-activa";
         texto.textContent = "CONECTADO";
+
         descripcion.textContent =
             "El servidor se encuentra disponible (simulación).";
 
         boton.textContent = "Simular desconexión";
+
+        aviso.hidden = true;
+
+        // Reanudar el monitoreo inmediatamente
+        actualizarRecursos();
+
     } else {
         panel.className = "conexion-inactiva";
         texto.textContent = "DESCONECTADO";
+
         descripcion.textContent =
             "El servidor no responde (simulación).";
 
         boton.textContent = "Simular conexión";
+
+        aviso.hidden = false;
     }
 }
+
 
 function guardarMedicion(historial, valor) {
     historial.push(valor);

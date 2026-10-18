@@ -500,3 +500,19 @@ section {
     outline: 2px solid #38bdf8;
     outline-offset: 3px;
 }
+
+/* Aviso de servidor desconectado */
+
+#aviso-desconexion {
+    background-color: #7f1d1d;
+    color: #fef2f2;
+    border-left: 5px solid #ef4444;
+    padding: 15px;
+    margin-top: 15px;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+#aviso-desconexion[hidden] {
+    display: none;
+}
