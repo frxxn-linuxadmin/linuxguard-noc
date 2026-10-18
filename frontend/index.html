@@ -70,7 +70,7 @@
             </div>
         </section>
         
-<section id="informacion-servidor">
+        <section id="informacion-servidor">
     <h2>Información del servidor</h2>
     <p>Datos generales del equipo monitoreado (simulación).</p>
 
@@ -105,7 +105,54 @@
             <p>Simulados</p>
         </div>
     </div>
-</section>
+        </section>
+
+
+        <section id="configurar-servidor">
+    <h2>Configurar servidor</h2>
+
+    <p>
+        Modificá los datos de identificación
+        del servidor monitoreado.
+    </p>
+
+    <form id="form-servidor">
+
+        <div class="campo-servidor">
+            <label for="input-nombre-servidor">
+                Nombre del servidor
+            </label>
+
+            <input
+                type="text"
+                id="input-nombre-servidor"
+                maxlength="100"
+                required
+            >
+        </div>
+
+        <div class="campo-servidor">
+            <label for="input-ip-servidor">
+                Dirección IP
+            </label>
+
+            <input
+                type="text"
+                id="input-ip-servidor"
+                placeholder="Ejemplo: 192.0.2.10"
+                maxlength="45"
+                required
+            >
+        </div>
+
+        <button type="submit" id="guardar-servidor">
+            Guardar servidor
+        </button>
+
+        <p id="mensaje-servidor" aria-live="polite"></p>
+
+            </form>
+        </section>
 
 
 

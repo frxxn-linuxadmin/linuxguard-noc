@@ -8,6 +8,31 @@ const MAX_ALERTAS = 100;
 
 const CLAVE_UMBRALES = "linuxguard_umbrales";
 
+const CLAVE_SERVIDOR = "linuxguard_config_servidor";
+
+let configuracionServidor = {
+    nombre: "linuxguard-server",
+    ip: "192.0.2.10"
+};
+
+// Recuperar la configuración guardada
+try {
+    const datosGuardados = JSON.parse(
+        localStorage.getItem(CLAVE_SERVIDOR)
+    );
+
+    if (
+        datosGuardados &&
+        typeof datosGuardados.nombre === "string" &&
+        typeof datosGuardados.ip === "string"
+    ) {
+        configuracionServidor = datosGuardados;
+    }
+} catch (error) {
+    console.error("Error al cargar la configuración:", error);
+}
+
+
 let umbralAdvertencia = 60;
 let umbralCritico = 80;
 let servidorConectado = true;
@@ -135,6 +160,86 @@ function verificarAlertas(cpu, ram, disco) {
             "Todos los recursos están dentro de los límites normales.",
             "alerta-normal"
         );
+    }
+}
+
+
+function mostrarConfiguracionServidor() {
+    // Actualizar el panel de información
+    document.getElementById("nombre-servidor").textContent =
+        configuracionServidor.nombre;
+
+    document.getElementById("ip-servidor").textContent =
+        configuracionServidor.ip;
+
+    // Actualizar los campos del formulario
+    document.getElementById("input-nombre-servidor").value =
+        configuracionServidor.nombre;
+
+    document.getElementById("input-ip-servidor").value =
+        configuracionServidor.ip;
+}
+
+function guardarConfiguracionServidor(evento) {
+    evento.preventDefault();
+
+    const nombre = document.getElementById(
+        "input-nombre-servidor"
+    ).value.trim();
+
+    const ip = document.getElementById(
+        "input-ip-servidor"
+    ).value.trim();
+
+    const mensaje = document.getElementById("mensaje-servidor");
+
+    // Validar los campos
+    if (nombre.length === 0 || ip.length === 0) {
+        mensaje.textContent =
+            "Debés completar todos los campos.";
+        mensaje.style.color = "#ef4444";
+        return;
+    }
+
+    // Validar una dirección IPv4
+    const partesIP = ip.split(".");
+
+    const ipValida = partesIP.length === 4 &&
+        partesIP.every(function(parte) {
+            return /^\d{1,3}$/.test(parte) &&
+                Number(parte) >= 0 &&
+                Number(parte) <= 255;
+        });
+
+    if (!ipValida) {
+        mensaje.textContent =
+            "Ingresá una dirección IPv4 válida.";
+        mensaje.style.color = "#ef4444";
+        return;
+    }
+
+    configuracionServidor = {
+        nombre: nombre,
+        ip: ip
+    };
+
+    try {
+        localStorage.setItem(
+            CLAVE_SERVIDOR,
+            JSON.stringify(configuracionServidor)
+        );
+
+        mostrarConfiguracionServidor();
+
+        mensaje.textContent =
+            "Configuración del servidor guardada correctamente.";
+        mensaje.style.color = "#22c55e";
+
+    } catch (error) {
+        mensaje.textContent =
+            "No se pudo guardar la configuración.";
+        mensaje.style.color = "#ef4444";
+        console.error(error);
     }
 }
 
@@ -491,6 +596,14 @@ document.getElementById("form-configuracion")
 // Activar botón de simulación de conexión
 document.getElementById("simular-conexion")
     .addEventListener("click", cambiarConexion);
+
+    
+// Mostrar la configuración al abrir la página
+mostrarConfiguracionServidor();
+
+// Activar el formulario del servidor
+document.getElementById("form-servidor")
+    .addEventListener("submit", guardarConfiguracionServidor);
 
 // Iniciar monitoreo simulado
 actualizarRecursos();

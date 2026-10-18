@@ -588,3 +588,90 @@ section {
         padding: 15px;
     }
 }
+
+/* Formulario de configuración del servidor */
+
+#configurar-servidor {
+    background-color: #1e293b;
+    padding: 25px;
+    border-radius: 10px;
+    border: 1px solid #334155;
+}
+
+#configurar-servidor h2 {
+    color: #38bdf8;
+}
+
+#form-servidor {
+    margin-top: 20px;
+}
+
+/* Campos del formulario */
+
+.campo-servidor {
+    margin-bottom: 20px;
+}
+
+.campo-servidor label {
+    display: block;
+    margin-bottom: 8px;
+    color: #f1f5f9;
+    font-weight: bold;
+}
+
+.campo-servidor input {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px;
+    background-color: #0f172a;
+    color: white;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.campo-servidor input:focus {
+    outline: 2px solid #38bdf8;
+    outline-offset: 2px;
+}
+
+/* Botón para guardar */
+
+#guardar-servidor {
+    background-color: #0284c7;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+#guardar-servidor:hover {
+    background-color: #0369a1;
+}
+
+#guardar-servidor:focus-visible {
+    outline: 2px solid #38bdf8;
+    outline-offset: 3px;
+}
+
+/* Mensaje de confirmación */
+
+#mensaje-servidor {
+    margin-top: 15px;
+    color: #22c55e;
+    font-weight: bold;
+}
+
+/* Diseño responsive */
+
+@media (max-width: 600px) {
+    #configurar-servidor {
+        padding: 15px;
+    }
+
+    .campo-servidor input {
+        max-width: 100%;
+    }
+}
