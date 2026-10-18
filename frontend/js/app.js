@@ -108,7 +108,9 @@ function verificarAlertas(cpu, ram, disco) {
     recursos.forEach(function(recurso) {
         let estado = "Normal";
 
-        if (recurso.valor >= 80) {
+        
+if (recurso.valor >= umbralCritico) {
+
             estado = "Crítico";
 
             agregarAlerta(
@@ -117,7 +119,8 @@ function verificarAlertas(cpu, ram, disco) {
                 "alerta-critica"
             );
 
-        } else if (recurso.valor >= 60) {
+} else if (recurso.valor >= umbralAdvertencia) {
+
             estado = "Advertencia";
 
             agregarAlerta(
@@ -151,16 +154,6 @@ function verificarAlertas(cpu, ram, disco) {
         );
     }
     
-
-
-
-    // Si no hay advertencias, mostramos estado normal
-    if (lista.children.length === 0) {
-        agregarAlerta(
-            "Todos los recursos están dentro de los límites normales.",
-            "alerta-normal"
-        );
-    }
 }
 
 
