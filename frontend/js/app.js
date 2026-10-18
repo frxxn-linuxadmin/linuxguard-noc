@@ -222,6 +222,13 @@ actualizarEstadoGeneral(cpu, ram, disco);
 
     // Comprobamos si hay alertas
     verificarAlertas(cpu, ram, disco);
+    
+// Registrar la hora de la última medición simulada
+const ahora = new Date();
+
+document.getElementById("hora-actualizacion").textContent =
+    ahora.toLocaleString("es-AR");
+
 }
 
 function cambiarConexion() {
