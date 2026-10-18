@@ -10,6 +10,7 @@ const CLAVE_UMBRALES = "linuxguard_umbrales";
 
 let umbralAdvertencia = 60;
 let umbralCritico = 80;
+let servidorConectado = true;
 
 // Recuperar la configuración guardada
 try {
@@ -199,6 +200,8 @@ function actualizarRecursos() {
     actualizarBarra("ram", ram);
     actualizarBarra("disco", disco);
     
+
+    
 // Actualizar el estado general del servidor
 actualizarEstadoGeneral(cpu, ram, disco);
 
@@ -214,7 +217,30 @@ actualizarEstadoGeneral(cpu, ram, disco);
     // Comprobamos si hay alertas
     verificarAlertas(cpu, ram, disco);
 }
+function cambiarConexion() {
+    servidorConectado = !servidorConectado;
 
+    const panel = document.getElementById("panel-conexion");
+    const texto = document.getElementById("texto-conexion");
+    const descripcion = document.getElementById("descripcion-conexion");
+    const boton = document.getElementById("simular-conexion");
+
+    if (servidorConectado) {
+        panel.className = "conexion-activa";
+        texto.textContent = "CONECTADO";
+        descripcion.textContent =
+            "El servidor se encuentra disponible (simulación).";
+
+        boton.textContent = "Simular desconexión";
+    } else {
+        panel.className = "conexion-inactiva";
+        texto.textContent = "DESCONECTADO";
+        descripcion.textContent =
+            "El servidor no responde (simulación).";
+
+        boton.textContent = "Simular conexión";
+    }
+}
 
 function guardarMedicion(historial, valor) {
     historial.push(valor);
@@ -436,6 +462,9 @@ document.getElementById("umbral-critico").value =
 document.getElementById("form-configuracion")
     .addEventListener("submit", guardarConfiguracion);
 
+// Activar botón de simulación de conexión
+document.getElementById("simular-conexion")
+    .addEventListener("click", cambiarConexion);
 
 // Iniciar monitoreo simulado
 actualizarRecursos();

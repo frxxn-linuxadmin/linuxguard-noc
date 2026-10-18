@@ -448,3 +448,55 @@ section {
         scroll-behavior: auto;
     }
 }
+
+/* Indicador de conexión del servidor */
+
+#panel-conexion {
+    padding: 25px;
+    background-color: #1e293b;
+    border: 2px solid;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+#panel-conexion h3 {
+    margin-top: 0;
+    font-size: 24px;
+}
+
+.conexion-activa {
+    border-color: #22c55e !important;
+}
+
+.conexion-activa h3 {
+    color: #22c55e;
+}
+
+.conexion-inactiva {
+    border-color: #ef4444 !important;
+}
+
+.conexion-inactiva h3 {
+    color: #ef4444;
+}
+
+/* Botón para simular conexión */
+
+#simular-conexion {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: #0284c7;
+    color: white;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+#simular-conexion:hover {
+    background-color: #0369a1;
+}
+
+#simular-conexion:focus-visible {
+    outline: 2px solid #38bdf8;
+    outline-offset: 3px;
+}
