@@ -387,3 +387,64 @@ footer {
 .estado-critico h3 {
     color: #ef4444;
 }
+
+/* Mejoras del menú de navegación */
+
+nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 15px;
+}
+
+nav a {
+    display: inline-block;
+    margin: 0;
+    padding: 10px 15px;
+    border-radius: 8px;
+    color: #f1f5f9;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+nav a:hover {
+    background-color: #334155;
+    color: #38bdf8;
+}
+
+nav a:focus-visible {
+    outline: 2px solid #38bdf8;
+    outline-offset: 2px;
+}
+
+/* Desplazamiento suave entre secciones */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Separación al navegar hacia una sección */
+section {
+    scroll-margin-top: 20px;
+}
+
+/* Adaptación para celulares */
+@media (max-width: 600px) {
+    nav {
+        gap: 5px;
+        padding: 10px;
+    }
+
+    nav a {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+}
+
+/* Respetar preferencias de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+}
