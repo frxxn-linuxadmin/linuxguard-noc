@@ -1,0 +1,677 @@
+
+/* Estilos generales */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #0f172a;
+    color: #f1f5f9;
+}
+
+/* Encabezado */
+header {
+    background-color: #1e293b;
+    padding: 25px;
+    text-align: center;
+    border-bottom: 2px solid #38bdf8;
+}
+
+header h1 {
+    margin: 0;
+    color: #38bdf8;
+}
+
+header p {
+    color: #94a3b8;
+}
+
+/* Menú de navegación */
+nav {
+    background-color: #1e293b;
+    padding: 15px;
+    text-align: center;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    margin: 0 15px;
+}
+
+nav a:hover {
+    color: #38bdf8;
+}
+
+/* Contenido principal */
+main {
+    max-width: 1100px;
+    margin: 30px auto;
+    padding: 20px;
+}
+
+section {
+    margin-bottom: 30px;
+}
+
+section h2 {
+    color: #38bdf8;
+}
+
+/* Tarjetas de monitoreo */
+#servidores article {
+    display: inline-block;
+    vertical-align: top;
+    width: calc(33.333% - 24px);
+    min-width: 0;
+    margin: 10px;
+    padding: 25px;
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+}
+
+/* Tablets */
+@media (max-width: 900px) {
+    #servidores article {
+        width: calc(50% - 24px);
+    }
+}
+
+/* Celulares */
+@media (max-width: 600px) {
+    header {
+        padding: 20px 12px;
+    }
+
+    header h1 {
+        font-size: 26px;
+    }
+
+    nav a {
+        display: inline-block;
+        margin: 8px;
+    }
+
+    main {
+        margin: 15px auto;
+        padding: 10px;
+    }
+
+    #servidores article {
+        display: block;
+        width: 100%;
+        margin: 12px 0;
+    }
+}
+
+
+article h3 {
+    color: #38bdf8;
+}
+
+/* Pie de página */
+footer {
+    background-color: #1e293b;
+    text-align: center;
+    padding: 15px;
+    color: #94a3b8;
+}
+
+/* Barras de utilización de recursos */
+.barra {
+    width: 100%;
+    height: 12px;
+    background-color: #334155;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progreso {
+    width: 0%;
+    height: 100%;
+    background-color: #22c55e;
+    border-radius: 6px;
+    transition: width 0.5s ease, background-color 0.5s ease;
+}
+
+/* Sistema de alertas */
+.alerta {
+    padding: 15px;
+    border-radius: 8px;
+    margin: 10px 0;
+    border-left: 5px solid;
+}
+
+.alerta-normal {
+    background-color: #14532d;
+    border-color: #22c55e;
+}
+
+.alerta-advertencia {
+    background-color: #78350f;
+    border-color: #f59e0b;
+}
+
+.alerta-critica {
+    background-color: #7f1d1d;
+    border-color: #ef4444;
+}
+
+/* Gráficos de monitoreo */
+
+.contenedor-graficos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+#graficos .tarjeta-grafico {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 20px;
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+}
+
+.tarjeta-grafico h3 {
+    color: #38bdf8;
+}
+
+.tarjeta-grafico canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* Adaptación para celulares */
+@media (max-width: 700px) {
+    .contenedor-graficos {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Historial de alertas */
+
+.tabla-contenedor {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 20px;
+    border-radius: 10px;
+    border: 1px solid #334155;
+}
+
+#historial-alertas table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #1e293b;
+    text-align: left;
+}
+
+#historial-alertas th,
+#historial-alertas td {
+    padding: 15px;
+    border-bottom: 1px solid #334155;
+}
+
+#historial-alertas th {
+    background-color: #334155;
+    color: #38bdf8;
+}
+
+#historial-alertas td {
+    color: #f1f5f9;
+}
+
+#historial-alertas tbody tr:hover {
+    background-color: #273449;
+}
+
+/* Botón para borrar historial */
+
+#borrar-historial {
+    margin-top: 20px;
+    padding: 12px 20px;
+    background-color: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+#borrar-historial:hover {
+    background-color: #b91c1c;
+}
+
+#borrar-historial:focus-visible {
+    outline: 2px solid #38bdf8;
+    outline-offset: 3px;
+}
+
+/* Adaptación a celulares */
+
+@media (max-width: 600px) {
+    #historial-alertas th,
+    #historial-alertas td {
+        padding: 10px;
+        font-size: 12px;
+    }
+}
+
+/* Configuración de alertas */
+
+#configuracion {
+    background-color: #1e293b;
+    padding: 25px;
+    border-radius: 10px;
+    border: 1px solid #334155;
+}
+
+#configuracion h2 {
+    color: #38bdf8;
+}
+
+#form-configuracion {
+    margin-top: 20px;
+}
+
+.campo-configuracion {
+    margin-bottom: 20px;
+}
+
+.campo-configuracion label {
+    display: block;
+    margin-bottom: 8px;
+    color: #f1f5f9;
+    font-weight: bold;
+}
+
+.campo-configuracion input {
+    width: 100%;
+    max-width: 300px;
+    padding: 12px;
+    background-color: #0f172a;
+    color: white;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.campo-configuracion input:focus {
+    outline: 2px solid #38bdf8;
+    outline-offset: 2px;
+}
+
+/* Botón guardar configuración */
+
+#guardar-configuracion {
+    background-color: #0284c7;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+#guardar-configuracion:hover {
+    background-color: #0369a1;
+}
+
+#guardar-configuracion:focus-visible {
+    outline: 2px solid #38bdf8;
+    outline-offset: 3px;
+}
+
+/* Mensaje de confirmación */
+
+#mensaje-configuracion {
+    margin-top: 15px;
+    color: #22c55e;
+    font-weight: bold;
+}
+
+/* Adaptación para celulares */
+
+@media (max-width: 600px) {
+    #configuracion {
+        padding: 15px;
+    }
+
+    .campo-configuracion input {
+        max-width: 100%;
+    }
+}
+
+/* Estado general del servidor */
+
+#panel-estado {
+    padding: 25px;
+    border-radius: 10px;
+    border: 2px solid;
+    background-color: #1e293b;
+    transition: border-color 0.3s ease;
+}
+
+#panel-estado h3 {
+    margin-top: 0;
+    font-size: 24px;
+}
+
+.estado-normal {
+    border-color: #22c55e !important;
+}
+
+.estado-normal h3 {
+    color: #22c55e;
+}
+
+.estado-advertencia {
+    border-color: #f59e0b !important;
+}
+
+.estado-advertencia h3 {
+    color: #f59e0b;
+}
+
+.estado-critico {
+    border-color: #ef4444 !important;
+}
+
+.estado-critico h3 {
+    color: #ef4444;
+}
+
+/* Mejoras del menú de navegación */
+
+nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 15px;
+}
+
+nav a {
+    display: inline-block;
+    margin: 0;
+    padding: 10px 15px;
+    border-radius: 8px;
+    color: #f1f5f9;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+nav a:hover {
+    background-color: #334155;
+    color: #38bdf8;
+}
+
+nav a:focus-visible {
+    outline: 2px solid #38bdf8;
+    outline-offset: 2px;
+}
+
+/* Desplazamiento suave entre secciones */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Separación al navegar hacia una sección */
+section {
+    scroll-margin-top: 20px;
+}
+
+/* Adaptación para celulares */
+@media (max-width: 600px) {
+    nav {
+        gap: 5px;
+        padding: 10px;
+    }
+
+    nav a {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+}
+
+/* Respetar preferencias de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+/* Indicador de conexión del servidor */
+
+#panel-conexion {
+    padding: 25px;
+    background-color: #1e293b;
+    border: 2px solid;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+#panel-conexion h3 {
+    margin-top: 0;
+    font-size: 24px;
+}
+
+.conexion-activa {
+    border-color: #22c55e !important;
+}
+
+.conexion-activa h3 {
+    color: #22c55e;
+}
+
+.conexion-inactiva {
+    border-color: #ef4444 !important;
+}
+
+.conexion-inactiva h3 {
+    color: #ef4444;
+}
+
+/* Botón para simular conexión */
+
+#simular-conexion {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: #0284c7;
+    color: white;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+#simular-conexion:hover {
+    background-color: #0369a1;
+}
+
+#simular-conexion:focus-visible {
+    outline: 2px solid #38bdf8;
+    outline-offset: 3px;
+}
+
+/* Aviso de servidor desconectado */
+
+#aviso-desconexion {
+    background-color: #7f1d1d;
+    color: #fef2f2;
+    border-left: 5px solid #ef4444;
+    padding: 15px;
+    margin-top: 15px;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+#aviso-desconexion[hidden] {
+    display: none;
+}
+
+/* Última actualización del servidor */
+
+.ultima-actualizacion {
+    margin-top: 15px;
+    padding: 12px 15px;
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+}
+
+.ultima-actualizacion p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+#hora-actualizacion {
+    color: #38bdf8;
+    font-weight: bold;
+}
+
+/* Información general del servidor */
+
+.datos-servidor {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.dato-servidor {
+    min-width: 0;
+    padding: 20px;
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+}
+
+.dato-servidor h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: #38bdf8;
+    font-size: 16px;
+}
+
+.dato-servidor p {
+    margin: 0;
+    color: #f1f5f9;
+    font-size: 15px;
+    overflow-wrap: anywhere;
+}
+
+/* Adaptación a tablets */
+
+@media (max-width: 900px) {
+    .datos-servidor {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Adaptación a celulares */
+
+@media (max-width: 600px) {
+    .datos-servidor {
+        grid-template-columns: 1fr;
+    }
+
+    .dato-servidor {
+        padding: 15px;
+    }
+}
+
+/* Formulario de configuración del servidor */
+
+#configurar-servidor {
+    background-color: #1e293b;
+    padding: 25px;
+    border-radius: 10px;
+    border: 1px solid #334155;
+}
+
+#configurar-servidor h2 {
+    color: #38bdf8;
+}
+
+#form-servidor {
+    margin-top: 20px;
+}
+
+/* Campos del formulario */
+
+.campo-servidor {
+    margin-bottom: 20px;
+}
+
+.campo-servidor label {
+    display: block;
+    margin-bottom: 8px;
+    color: #f1f5f9;
+    font-weight: bold;
+}
+
+.campo-servidor input {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px;
+    background-color: #0f172a;
+    color: white;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.campo-servidor input:focus {
+    outline: 2px solid #38bdf8;
+    outline-offset: 2px;
+}
+
+/* Botón para guardar */
+
+#guardar-servidor {
+    background-color: #0284c7;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+#guardar-servidor:hover {
+    background-color: #0369a1;
+}
+
+#guardar-servidor:focus-visible {
+    outline: 2px solid #38bdf8;
+    outline-offset: 3px;
+}
+
+/* Mensaje de confirmación */
+
+#mensaje-servidor {
+    margin-top: 15px;
+    color: #22c55e;
+    font-weight: bold;
+}
+
+/* Diseño responsive */
+
+@media (max-width: 600px) {
+    #configurar-servidor {
+        padding: 15px;
+    }
+
+    .campo-servidor input {
+        max-width: 100%;
+    }
+}
