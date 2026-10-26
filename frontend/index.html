@@ -1,320 +1,96 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinuxGuard NOC</title>
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LinuxGuard NOC — Monitoreo GNU/Linux</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-
-    <header>
-        <h1>LinuxGuard NOC</h1>
-        <p>Sistema de monitoreo de servidores GNU/Linux</p>
-    </header>
-
-
-<nav aria-label="Navegación principal">
-    <a href="#inicio">Inicio</a>
-    <a href="#servidores">Servidores</a>
-    <a href="#graficos">Gráficos</a>
-    <a href="#alertas">Alertas</a>
-    <a href="#historial-alertas">Historial</a>
-    <a href="#configuracion">Configuración</a>
-    <a href="#informacion-servidor">Información</a>
-</nav>
-
-
-    <main id="inicio">
-        
-<section id="conexion-servidor">
-    <h2>Conexión del servidor</h2>
-
-    <div id="panel-conexion" class="conexion-activa">
-        <h3 id="texto-conexion">CONECTADO</h3>
-
-        <p id="descripcion-conexion">
-            Estado de conexión simulado.
-        </p>
-    </div>
-
-    <button id="simular-conexion" type="button">
-        Simular desconexión
-        
-<p id="aviso-desconexion" role="status" hidden>
-    El servidor está desconectado.
-    Las métricas no se están actualizando.
-</p>
-
-    </button>
-    
-<div class="ultima-actualizacion">
-    <p>
-        Última actualización:
-        <span id="hora-actualizacion">Sin datos</span>
-    </p>
-</div>
-
-</section>
-
-        <section id="estado-general">
-                <h2>Estado general del servidor</h2>
-
-            <div id="panel-estado" class="estado-normal">
-                <h3 id="texto-estado">NORMAL</h3>
-
-                <p id="descripcion-estado">
-                    Verificando el estado de los recursos...
-                </p>
-            </div>
-        </section>
-        
-        <section id="informacion-servidor">
-    <h2>Información del servidor</h2>
-    <p>Datos generales del equipo monitoreado (simulación).</p>
-
-    <div class="datos-servidor">
-        <div class="dato-servidor">
-            <h3>Nombre del servidor</h3>
-            <p id="nombre-servidor">linuxguard-server</p>
+  <!-- HTML: estructura visual. Los datos reales los carga js/app.js. -->
+  <header><h1>LinuxGuard NOC</h1><p>Monitoreo de servidores GNU/Linux en tiempo real</p></header>
+  <nav aria-label="Navegación principal">
+    <a href="#conexion-servidor">Conexión</a><a href="#informacion-servidor">Información</a>
+    <a href="#servidores">Recursos</a><a href="#graficos">Gráficos</a>
+    <a href="#procesos">Procesos</a><a href="#servicios">Servicios</a>
+    <a href="#alertas">Alertas</a><a href="#historial-alertas">Historial</a><a href="#configuracion">Configuración</a>
+  </nav>
+  <main id="inicio">
+    <!-- La URL del backend se guarda en el navegador, no queda fija en el código. -->
+    <section id="conexion-servidor">
+      <h2>Conexión al backend</h2>
+      <div id="panel-conexion" class="conexion-inactiva" role="status">
+        <h3 id="texto-conexion">DESCONECTADO</h3>
+        <p id="descripcion-conexion">Esperando conexión con el backend.</p>
+      </div>
+      <form id="form-servidor" class="form-en-linea">
+        <div class="campo-servidor"><label for="input-ip-servidor">Dirección del backend (con puerto)</label>
+          <input id="input-ip-servidor" type="url" placeholder="http://localhost:3000" required>
         </div>
-
-        <div class="dato-servidor">
-            <h3>Sistema operativo</h3>
-            <p id="sistema-operativo">Ubuntu Server 24.04</p>
-        </div>
-
-        <div class="dato-servidor">
-            <h3>Dirección IP</h3>
-            <p id="ip-servidor">192.0.2.10</p>
-        </div>
-
-        <div class="dato-servidor">
-            <h3>Tiempo de actividad</h3>
-            <p id="uptime-servidor">3 días, 12 horas</p>
-        </div>
-
-        <div class="dato-servidor">
-            <h3>Arquitectura</h3>
-            <p id="arquitectura-servidor">x86_64</p>
-        </div>
-
-        <div class="dato-servidor">
-            <h3>Tipo de datos</h3>
-            <p>Simulados</p>
-        </div>
-    </div>
-        </section>
-
-
-        <section id="configurar-servidor">
-    <h2>Configurar servidor</h2>
-
-    <p>
-        Modificá los datos de identificación
-        del servidor monitoreado.
-    </p>
-
-    <form id="form-servidor">
-
-        <div class="campo-servidor">
-            <label for="input-nombre-servidor">
-                Nombre del servidor
-            </label>
-
-            <input
-                type="text"
-                id="input-nombre-servidor"
-                maxlength="100"
-                required
-            >
-        </div>
-
-        <div class="campo-servidor">
-            <label for="input-ip-servidor">
-                Dirección IP
-            </label>
-
-            <input
-                type="text"
-                id="input-ip-servidor"
-                placeholder="Ejemplo: 192.0.2.10"
-                maxlength="45"
-                required
-            >
-        </div>
-
-        <button type="submit" id="guardar-servidor">
-            Guardar servidor
-        </button>
-
-        <p id="mensaje-servidor" aria-live="polite"></p>
-
-            </form>
-        </section>
-
-
-
-        <section id="servidores">
-            <h2>Estado del servidor</h2>
-            <p>Panel de monitoreo de recursos.</p>
-
-            
-       
-            <article>
-                <h3>CPU</h3>
-                <p>Uso: <span id="cpu">25</span>%</p>
-                <div class="barra">
-                <div id="barra-cpu" class="progreso"></div>
-                </div>
-            </article>
-
-            <article>
-                <h3>Memoria RAM</h3>
-                <p>Uso: <span id="ram">40</span>%</p>
-                <div class="barra">
-                <div id="barra-ram" class="progreso"></div>
-                </div>
-            </article>
-
-            <article>
-                <h3>Disco</h3>
-                <p>Uso: <span id="disco">60</span>%</p>
-                <div class="barra">
-                <div id="barra-disco" class="progreso"></div>
-                </div>
-            </article>
-            
-            
-            <article>
-                <h3>Red - Descarga</h3>
-                <p>
-                    Tráfico entrante:
-                    <span id="red-entrada">0.0</span> Mbps
-                </p>
-            </article>
-
-            <article>
-                <h3>Red - Subida</h3>
-                <p>
-                    Tráfico saliente:
-                <span id="red-salida">0.0</span> Mbps
-                </p>
-            </article>
-
-
-        </section>
-        
-    <section id="graficos">
-        <h2>Historial de recursos</h2>
-        <p>Monitoreo de CPU y RAM (datos simulados).</p>
-
-        <div class="contenedor-graficos">
-        <article class="tarjeta-grafico">
-            <h3>Historial de CPU</h3>
-            <canvas id="grafico-cpu" width="500" height="220">
-                Tu navegador no admite Canvas.
-            </canvas>
-        </article>
-
-        <article class="tarjeta-grafico">
-            <h3>Historial de RAM</h3>
-            <canvas id="grafico-ram" width="500" height="220">
-                Tu navegador no admite Canvas.
-            </canvas>
-        </article>
-        </div>
+        <button id="guardar-servidor" type="submit">Conectar</button>
+      </form>
+      <p id="mensaje-servidor" aria-live="polite"></p>
+      <p id="aviso-desconexion" role="status" hidden>Sin conexión: las métricas no se están actualizando.</p>
+      <div class="ultima-actualizacion">Última actualización: <span id="hora-actualizacion">Sin datos</span></div>
     </section>
-        
-        <section id="alertas">
-            <h2>Alertas del sistema</h2>
-
-            <div id="lista-alertas" aria-live="polite">
-            <p>Verificando recursos del servidor...</p>
-            </div>
-        </section>
-        
-        <section id="historial-alertas">
-            <h2>Historial de alertas</h2>
-            <p>Registro de eventos detectados durante el monitoreo.</p>
-
-            <div class="tabla-contenedor">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Hora</th>
-                            <th>Recurso</th>
-                            <th>Uso</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-historial">
-                    <tr>
-                        <td colspan="4">Sin alertas registradas.</td>
-                    </tr>
-                </tbody>
-                </table>
-            </div>
-
-            <button id="borrar-historial" type="button">
-                Borrar historial
-            </button>
-        </section>
-        
-        <section id="configuracion">
-            <h2>Configuración de alertas</h2>
-
-            <p>
-                Personalizá los límites de utilización
-                de recursos del servidor.
-            </p>
-
-            <form id="form-configuracion">
-                <div class="campo-configuracion">
-                    <label for="umbral-advertencia">
-                        Umbral de advertencia (%)
-                    </label>
-
-                    <input
-                        type="number"
-                        id="umbral-advertencia"
-                        min="1"
-                        max="98"
-                        value="60"
-                        required
-                    >
-                </div>
-
-                <div class="campo-configuracion">
-                    <label for="umbral-critico">
-                        Umbral crítico (%)
-                    </label>
-
-                    <input
-                        type="number"
-                        id="umbral-critico"
-                        min="2"
-                        max="100"
-                        value="80"
-                        required
-                    >
-                </div>
-
-                <button type="submit" id="guardar-configuracion">
-                    Guardar configuración
-                </button>
-
-                <p id="mensaje-configuracion" aria-live="polite"></p>
-            </form>
-        </section>
-
-    </main>
-
-    <footer>
-        <p>LinuxGuard NOC - Proyecto Integrador Final</p>
-    </footer>
-
-    <script src="js/app.js"></script>
+    <section id="estado-general"><h2>Estado general del servidor</h2>
+      <div id="panel-estado"><h3 id="texto-estado">DESCONOCIDO</h3>
+        <p id="descripcion-estado">Esperando métricas reales.</p></div>
+    </section>
+    <section id="informacion-servidor"><h2>Información del servidor</h2>
+      <p>Los datos proceden del backend LinuxGuard NOC.</p>
+      <div class="datos-servidor">
+        <div class="dato-servidor"><h3>Nombre del servidor</h3><p id="nombre-servidor">—</p></div>
+        <div class="dato-servidor"><h3>Sistema operativo</h3><p id="sistema-operativo">—</p></div>
+        <div class="dato-servidor"><h3>Dirección IP</h3><p id="ip-servidor">—</p></div>
+        <div class="dato-servidor"><h3>Tiempo de actividad</h3><p id="uptime-servidor">—</p></div>
+        <div class="dato-servidor"><h3>Arquitectura</h3><p id="arquitectura-servidor">—</p></div>
+        <div class="dato-servidor"><h3>Tipo de datos</h3><p id="tipo-datos">Esperando datos reales</p></div>
+      </div>
+    </section>
+    <section id="servidores"><h2>Recursos del servidor</h2>
+      <p>Valores obtenidos del equipo que ejecuta Node.js.</p>
+      <article><h3>CPU</h3><p>Uso: <span id="cpu">—</span>%</p><div class="barra"><div id="barra-cpu" class="progreso"></div></div></article>
+      <article><h3>Memoria RAM</h3><p>Uso: <span id="ram">—</span>%</p><div class="barra"><div id="barra-ram" class="progreso"></div></div></article>
+      <article><h3>Disco (mayor uso)</h3><p>Uso: <span id="disco">—</span>%</p><div class="barra"><div id="barra-disco" class="progreso"></div></div></article>
+      <article><h3>Red — Descarga</h3><p><span id="red-entrada">—</span> Mbps</p></article>
+      <article><h3>Red — Subida</h3><p><span id="red-salida">—</span> Mbps</p></article>
+      <article><h3>Temperatura CPU</h3><p><span id="temperatura-cpu">—</span> °C</p></article>
+    </section>
+    <section id="graficos"><h2>Historial reciente de recursos</h2><p>Últimas 20 mediciones recibidas (CPU y RAM).</p>
+      <div class="contenedor-graficos">
+        <article class="tarjeta-grafico"><h3>CPU</h3><canvas id="grafico-cpu" width="500" height="220">Canvas no disponible.</canvas></article>
+        <article class="tarjeta-grafico"><h3>RAM</h3><canvas id="grafico-ram" width="500" height="220">Canvas no disponible.</canvas></article>
+      </div>
+    </section>
+    <section id="procesos"><h2>Procesos con mayor uso de CPU</h2>
+      <div class="tabla-contenedor"><table><thead><tr><th>PID</th><th>Proceso</th><th>CPU %</th><th>RAM %</th><th>Estado</th></tr></thead>
+        <tbody id="tabla-procesos"><tr><td colspan="5">Esperando datos.</td></tr></tbody></table></div>
+    </section>
+    <section id="servicios"><h2>Servicios del sistema</h2>
+      <div class="tabla-contenedor"><table><thead><tr><th>Servicio</th><th>Estado</th></tr></thead>
+        <tbody id="tabla-servicios"><tr><td colspan="2">Esperando datos.</td></tr></tbody></table></div>
+    </section>
+    <section id="alertas"><h2>Alertas activas</h2><div id="lista-alertas" aria-live="polite">Esperando datos del backend.</div></section>
+    <section id="historial-alertas"><h2>Historial de eventos</h2>
+      <p>Registro persistente enviado por <code>GET /api/eventos</code>. No se borra desde esta interfaz.</p>
+      <div class="tabla-contenedor"><table><thead><tr><th>Fecha</th><th>Recurso</th><th>Mensaje</th><th>Nivel</th></tr></thead>
+        <tbody id="tabla-historial"><tr><td colspan="4">Sin eventos cargados.</td></tr></tbody></table></div>
+    </section>
+    <section id="configuracion"><h2>Configuración de alertas</h2>
+      <p>Los cambios se envían a <code>PUT /api/config/umbrales</code> y modifican la configuración del backend.</p>
+      <form id="form-configuracion"><div class="tabla-contenedor"><table><thead><tr><th>Recurso</th><th>Advertencia</th><th>Crítico</th></tr></thead><tbody>
+        <tr><th>CPU (%)</th><td><input id="cpu-advertencia" type="number" min="0" max="100" required></td><td><input id="cpu-critico" type="number" min="0" max="100" required></td></tr>
+        <tr><th>RAM (%)</th><td><input id="memoria-advertencia" type="number" min="0" max="100" required></td><td><input id="memoria-critico" type="number" min="0" max="100" required></td></tr>
+        <tr><th>Temperatura (°C)</th><td><input id="temperatura-advertencia" type="number" min="0" max="120" required></td><td><input id="temperatura-critico" type="number" min="0" max="120" required></td></tr>
+        <tr><th>Disco (%)</th><td><input id="disco-advertencia" type="number" min="0" max="100" required></td><td><input id="disco-critico" type="number" min="0" max="100" required></td></tr>
+      </tbody></table></div>
+      <button id="guardar-configuracion" type="submit">Guardar umbrales</button>
+      <p id="mensaje-configuracion" aria-live="polite"></p>
+    </form></section>
+  </main>
+  <footer><p>LinuxGuard NOC — Práctica Profesionalizante III</p></footer>
+  <!-- El cliente Socket.IO se carga dinámicamente desde la URL elegida por el usuario. -->
+  <script src="js/app.js"></script>
 </body>
 </html>

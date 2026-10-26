@@ -675,3 +675,19 @@ section {
         max-width: 100%;
     }
 }
+
+/* ----------------------------------------------------
+   INTEGRACIÓN REAL: formularios y tablas nuevas
+   Conservamos la paleta y el diseño responsive de Lucio.
+   ---------------------------------------------------- */
+#procesos table, #servicios table, #configuracion table { width:100%; border-collapse:collapse; background:#1e293b; }
+#procesos th, #procesos td, #servicios th, #servicios td, #configuracion th, #configuracion td { padding:12px; text-align:left; border-bottom:1px solid #334155; }
+#procesos thead, #servicios thead, #configuracion thead { color:#38bdf8; background:#334155; }
+#form-configuracion input { width:95px; max-width:100%; padding:9px; border:1px solid #475569; border-radius:6px; background:#0f172a; color:#fff; }
+#form-servidor { display:flex; align-items:end; flex-wrap:wrap; gap:12px; }
+#form-servidor .campo-servidor { margin:0; flex:1 1 260px; }
+#form-servidor input { width:100%; max-width:none; }
+#form-servidor button { margin-bottom:0; }
+#panel-estado:not([class]) { border-color:#64748b; }
+#mensaje-servidor, #mensaje-configuracion { overflow-wrap:anywhere; }
+@media(max-width:600px) { #procesos td, #procesos th, #servicios td, #servicios th, #configuracion td, #configuracion th {padding:8px;font-size:12px;} #form-configuracion input {width:70px;} }

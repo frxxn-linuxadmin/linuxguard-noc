@@ -1,603 +1,317 @@
+/* LinuxGuard NOC — cliente de las API REST y Socket.IO del backend.
+ * NO inventa métricas. Si se pierde la conexión, indica datos desactualizados.
+ * La URL del backend se configura en pantalla y se guarda solo en este navegador.
+ */
 
-const historialCPU = [];
-const historialRAM = [];
+// ----------------------------------------------------
+// ESTADO DEL CLIENTE
+// ----------------------------------------------------
+const $ = id => document.getElementById(id);
 const MAX_MEDICIONES = 20;
+const historialCPU = [], historialRAM = [];
+let apiBase = localStorage.getItem('linuxguardBackend') || 'http://localhost:3000';
+let socket = null;
+let ultimaRecepcion = 0;
+let intervaloRespaldo = null;
+let intervaloEventos = null;
+let instanciaConexion = 0;
 
-const CLAVE_HISTORIAL = "linuxguard_historial_alertas";
-const MAX_ALERTAS = 100;
+// Utilidades: convertimos datos con cuidado porque algunos sensores devuelven null.
+const numero = valor => typeof valor === 'number' && Number.isFinite(valor) ? valor : null;
+const porcentaje = valor => numero(valor) === null ? null : Math.min(100, Math.max(0, valor));
+const formato = (valor, decimales = 1) => numero(valor) === null ? '—' : valor.toFixed(decimales);
+function texto(id, valor) { const elemento = $(id); if (elemento) elemento.textContent = String(valor); }
 
-const CLAVE_UMBRALES = "linuxguard_umbrales";
-
-const CLAVE_SERVIDOR = "linuxguard_config_servidor";
-
-let configuracionServidor = {
-    nombre: "linuxguard-server",
-    ip: "192.0.2.10"
-};
-
-// Recuperar la configuración guardada
-try {
-    const datosGuardados = JSON.parse(
-        localStorage.getItem(CLAVE_SERVIDOR)
-    );
-
-    if (
-        datosGuardados &&
-        typeof datosGuardados.nombre === "string" &&
-        typeof datosGuardados.ip === "string"
-    ) {
-        configuracionServidor = datosGuardados;
-    }
-} catch (error) {
-    console.error("Error al cargar la configuración:", error);
+// ----------------------------------------------------
+// CONEXIÓN Y CONSULTAS HTTP
+// ----------------------------------------------------
+function estadoConexion(conectado, mensaje = '') {
+  const panel = $('panel-conexion');
+  if (panel) panel.className = conectado ? 'conexion-activa' : 'conexion-inactiva';
+  texto('texto-conexion', conectado ? 'CONECTADO' : 'DESCONECTADO');
+  texto('descripcion-conexion', mensaje || (conectado ? 'Recibiendo métricas reales del backend.' : 'No llegan métricas del backend.'));
+  const aviso = $('aviso-desconexion');
+  if (aviso) aviso.hidden = conectado;
+  if (!conectado) texto('tipo-datos', 'Sin conexión (datos anteriores)');
 }
 
-
-let umbralAdvertencia = 60;
-let umbralCritico = 80;
-let servidorConectado = true;
-
-// Recuperar la configuración guardada
-try {
-    const configuracion = JSON.parse(
-        localStorage.getItem(CLAVE_UMBRALES)
-    );
-
-    if (
-        configuracion &&
-        Number.isInteger(configuracion.advertencia) &&
-        Number.isInteger(configuracion.critico) &&
-        configuracion.advertencia >= 1 &&
-        configuracion.critico <= 100 &&
-        configuracion.advertencia < configuracion.critico
-    ) {
-        umbralAdvertencia = configuracion.advertencia;
-        umbralCritico = configuracion.critico;
-    }
-} catch (error) {
-    console.error("Error al recuperar los umbrales:", error);
+// Timeout para que las consultas no queden esperando indefinidamente.
+async function obtenerJSON(ruta) {
+  const controlador = new AbortController();
+  const timeout = setTimeout(() => controlador.abort(), 10000);
+  try {
+    const respuesta = await fetch(apiBase + ruta, { signal: controlador.signal, cache: 'no-store' });
+    if (!respuesta.ok) throw new Error('HTTP ' + respuesta.status);
+    return await respuesta.json();
+  } finally { clearTimeout(timeout); }
 }
 
-
-// Recuperamos los registros guardados en el navegador
-let historialAlertas = [];
-
-try {
-    const datosGuardados = JSON.parse(
-        localStorage.getItem(CLAVE_HISTORIAL)
-    );
-
-    if (Array.isArray(datosGuardados)) {
-        historialAlertas = datosGuardados;
-    }
-} catch (error) {
-    console.error("Error al recuperar el historial:", error);
+// ----------------------------------------------------
+// BARRAS Y GRÁFICOS (CANVAS SIN DEPENDENCIAS EXTERNAS)
+// ----------------------------------------------------
+function barra(recurso, valor, estado) {
+  const elemento = $('barra-' + recurso);
+  if (!elemento) return;
+  elemento.style.width = (porcentaje(valor) ?? 0) + '%';
+  elemento.style.backgroundColor = estado === 'critico' ? '#ef4444' :
+    estado === 'advertencia' ? '#f59e0b' : '#22c55e';
 }
-
-// Recordamos el último estado de cada recurso
-const estadosAnteriores = {};
-
-
-function actualizarBarra(recurso, valor) {
-    const barra = document.getElementById("barra-" + recurso);
-
-    barra.style.width = valor + "%";
-
-    if (valor >= umbralCritico) {
-        barra.style.backgroundColor = "#ef4444";
-    } else if (valor >= umbralAdvertencia) {
-        barra.style.backgroundColor = "#f59e0b";
-    } else {
-        barra.style.backgroundColor = "#22c55e";
-    }
-}
-   
-function verificarAlertas(cpu, ram, disco) {
-    const lista = document.getElementById("lista-alertas");
-
-    // Limpiamos las alertas anteriores
-    lista.innerHTML = "";
-
-    const recursos = [
-        { nombre: "CPU", valor: cpu },
-        { nombre: "RAM", valor: ram },
-        { nombre: "Disco", valor: disco }
-    ];
-
-
-    recursos.forEach(function(recurso) {
-        let estado = "Normal";
-
-        
-if (recurso.valor >= umbralCritico) {
-
-            estado = "Crítico";
-
-            agregarAlerta(
-                recurso.nombre + " en estado crítico: " +
-                recurso.valor + "%",
-                "alerta-critica"
-            );
-
-} else if (recurso.valor >= umbralAdvertencia) {
-
-            estado = "Advertencia";
-
-            agregarAlerta(
-                recurso.nombre + " con uso elevado: " +
-                recurso.valor + "%",
-                "alerta-advertencia"
-            );
-        }
-
-        // Registrar solamente al entrar o cambiar
-        // a un estado de alerta
-        if (
-            estado !== "Normal" &&
-            estadosAnteriores[recurso.nombre] !== estado
-        ) {
-            registrarHistorial(
-                recurso.nombre,
-                recurso.valor,
-                estado
-            );
-        }
-
-        estadosAnteriores[recurso.nombre] = estado;
-    });
-    
-    // Si no hay advertencias, mostramos estado normal
-    if (lista.children.length === 0) {
-        agregarAlerta(
-            "Todos los recursos están dentro de los límites normales.",
-            "alerta-normal"
-        );
-    }
-    
-}
-
-
-function mostrarConfiguracionServidor() {
-    // Actualizar el panel de información
-    document.getElementById("nombre-servidor").textContent =
-        configuracionServidor.nombre;
-
-    document.getElementById("ip-servidor").textContent =
-        configuracionServidor.ip;
-
-    // Actualizar los campos del formulario
-    document.getElementById("input-nombre-servidor").value =
-        configuracionServidor.nombre;
-
-    document.getElementById("input-ip-servidor").value =
-        configuracionServidor.ip;
-}
-
-function guardarConfiguracionServidor(evento) {
-    evento.preventDefault();
-
-    const nombre = document.getElementById(
-        "input-nombre-servidor"
-    ).value.trim();
-
-    const ip = document.getElementById(
-        "input-ip-servidor"
-    ).value.trim();
-
-    const mensaje = document.getElementById("mensaje-servidor");
-
-    // Validar los campos
-    if (nombre.length === 0 || ip.length === 0) {
-        mensaje.textContent =
-            "Debés completar todos los campos.";
-        mensaje.style.color = "#ef4444";
-        return;
-    }
-
-    // Validar una dirección IPv4
-    const partesIP = ip.split(".");
-
-    const ipValida = partesIP.length === 4 &&
-        partesIP.every(function(parte) {
-            return /^\d{1,3}$/.test(parte) &&
-                Number(parte) >= 0 &&
-                Number(parte) <= 255;
-        });
-
-    if (!ipValida) {
-        mensaje.textContent =
-            "Ingresá una dirección IPv4 válida.";
-        mensaje.style.color = "#ef4444";
-        return;
-    }
-
-    configuracionServidor = {
-        nombre: nombre,
-        ip: ip
-    };
-
-    try {
-        localStorage.setItem(
-            CLAVE_SERVIDOR,
-            JSON.stringify(configuracionServidor)
-        );
-
-        mostrarConfiguracionServidor();
-
-        mensaje.textContent =
-            "Configuración del servidor guardada correctamente.";
-        mensaje.style.color = "#22c55e";
-
-    } catch (error) {
-        mensaje.textContent =
-            "No se pudo guardar la configuración.";
-        mensaje.style.color = "#ef4444";
-        console.error(error);
-    }
-}
-
-function agregarAlerta(mensaje, tipo) {
-    const lista = document.getElementById("lista-alertas");
-
-    const alerta = document.createElement("div");
-    alerta.className = "alerta " + tipo;
-    alerta.textContent = mensaje;
-
-    lista.appendChild(alerta);
-}
-
-
-function actualizarEstadoGeneral(cpu, ram, disco) {
-    const panel = document.getElementById("panel-estado");
-    const texto = document.getElementById("texto-estado");
-    const descripcion = document.getElementById("descripcion-estado");
-
-    // Tomamos el recurso con mayor utilización
-    const mayorUso = Math.max(cpu, ram, disco);
-
-    if (mayorUso >= umbralCritico) {
-        panel.className = "estado-critico";
-        texto.textContent = "CRÍTICO";
-        descripcion.textContent =
-            "Se detectaron recursos en estado crítico.";
-
-    } else if (mayorUso >= umbralAdvertencia) {
-        panel.className = "estado-advertencia";
-        texto.textContent = "ADVERTENCIA";
-        descripcion.textContent =
-            "Se detectó un uso elevado de recursos.";
-
-    } else {
-        panel.className = "estado-normal";
-        texto.textContent = "NORMAL";
-        descripcion.textContent =
-            "Todos los recursos están dentro de los límites normales.";
-    }
-}
-
-
-function actualizarRecursos() {
-    
-    // No actualizar métricas si el servidor está desconectado
-    if (!servidorConectado) {
-        return;
-    }
-
-    // Datos simulados
-    const cpu = Math.floor(Math.random() * 101);
-    const ram = Math.floor(Math.random() * 101);
-    const disco = 60;
-    
-    // Simulación de tráfico de red en Mbps
-    const entrada = (Math.random() * 100).toFixed(1);
-    const salida = (Math.random() * 50).toFixed(1);
-
-    document.getElementById("red-entrada").textContent = entrada;
-    document.getElementById("red-salida").textContent = salida;
-
-
-    document.getElementById("cpu").textContent = cpu;
-    document.getElementById("ram").textContent = ram;
-    document.getElementById("disco").textContent = disco;
-
-    actualizarBarra("cpu", cpu);
-    actualizarBarra("ram", ram);
-    actualizarBarra("disco", disco);
-    
-
-    
-// Actualizar el estado general del servidor
-actualizarEstadoGeneral(cpu, ram, disco);
-
-    
-    // Guardar las mediciones
-    guardarMedicion(historialCPU, cpu);
-    guardarMedicion(historialRAM, ram);
-
-    // Dibujar los gráficos
-    dibujarGrafico("grafico-cpu", historialCPU, "#38bdf8");
-    dibujarGrafico("grafico-ram", historialRAM, "#22c55e");
-
-    // Comprobamos si hay alertas
-    verificarAlertas(cpu, ram, disco);
-    
-// Registrar la hora de la última medición simulada
-const ahora = new Date();
-
-document.getElementById("hora-actualizacion").textContent =
-    ahora.toLocaleString("es-AR");
-
-}
-
-function cambiarConexion() {
-    servidorConectado = !servidorConectado;
-
-    const panel = document.getElementById("panel-conexion");
-    const texto = document.getElementById("texto-conexion");
-    const descripcion = document.getElementById("descripcion-conexion");
-    const boton = document.getElementById("simular-conexion");
-    const aviso = document.getElementById("aviso-desconexion");
-
-    if (servidorConectado) {
-        panel.className = "conexion-activa";
-        texto.textContent = "CONECTADO";
-
-        descripcion.textContent =
-            "El servidor se encuentra disponible (simulación).";
-
-        boton.textContent = "Simular desconexión";
-
-        aviso.hidden = true;
-
-        // Reanudar el monitoreo inmediatamente
-        actualizarRecursos();
-
-    } else {
-        panel.className = "conexion-inactiva";
-        texto.textContent = "DESCONECTADO";
-
-        descripcion.textContent =
-            "El servidor no responde (simulación).";
-
-        boton.textContent = "Simular conexión";
-
-        aviso.hidden = false;
-    }
-}
-
-
 function guardarMedicion(historial, valor) {
-    historial.push(valor);
-
-    if (historial.length > MAX_MEDICIONES) {
-        historial.shift();
-    }
+  if (numero(valor) === null) return;
+  historial.push(porcentaje(valor));
+  if (historial.length > MAX_MEDICIONES) historial.shift();
+}
+function grafico(id, mediciones, color) {
+  const canvas = $(id);
+  const contexto = canvas?.getContext('2d');
+  if (!contexto) return;
+  const ancho = canvas.width, alto = canvas.height, margen = 35;
+  contexto.clearRect(0, 0, ancho, alto);
+  contexto.font = '12px Arial'; contexto.lineWidth = 1;
+  for (let p = 0; p <= 100; p += 25) {
+    const y = alto - margen - p / 100 * (alto - 2 * margen);
+    contexto.strokeStyle = '#334155'; contexto.beginPath();
+    contexto.moveTo(margen, y); contexto.lineTo(ancho - margen, y); contexto.stroke();
+    contexto.fillStyle = '#94a3b8'; contexto.fillText(p + '%', 3, y + 4);
+  }
+  contexto.strokeStyle = color; contexto.lineWidth = 3; contexto.beginPath();
+  mediciones.forEach((valor, indice) => {
+    const x = margen + indice * (ancho - 2 * margen) / (MAX_MEDICIONES - 1);
+    const y = alto - margen - valor / 100 * (alto - 2 * margen);
+    if (indice === 0) contexto.moveTo(x, y); else contexto.lineTo(x, y);
+  });
+  contexto.stroke();
 }
 
-function dibujarGrafico(idCanvas, datos, color) {
-    const canvas = document.getElementById(idCanvas);
-
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-
-    if (!ctx) return;
-
-    const ancho = canvas.width;
-    const alto = canvas.height;
-    const margen = 35;
-
-    // Limpiar el gráfico anterior
-    ctx.clearRect(0, 0, ancho, alto);
-
-    // Dibujar líneas horizontales
-    ctx.strokeStyle = "#334155";
-    ctx.lineWidth = 1;
-
-    for (let porcentaje = 0; porcentaje <= 100; porcentaje += 25) {
-        const y = alto - margen -
-            (porcentaje / 100) * (alto - 2 * margen);
-
-        ctx.beginPath();
-        ctx.moveTo(margen, y);
-        ctx.lineTo(ancho - margen, y);
-        ctx.stroke();
-
-        ctx.fillStyle = "#94a3b8";
-        ctx.font = "12px Arial";
-        ctx.fillText(porcentaje + "%", 2, y + 4);
+// ----------------------------------------------------
+// ALERTAS, INFORMACIÓN Y TABLAS
+// ----------------------------------------------------
+function estadoGeneral(estado) {
+  const descripciones = {
+    normal: 'Los recursos están dentro de los límites configurados.',
+    advertencia: 'Hay recursos en advertencia.',
+    critico: 'Hay recursos en estado crítico.'
+  };
+  const panel = $('panel-estado');
+  if (panel) panel.className = descripciones[estado] ? 'estado-' + estado : '';
+  texto('texto-estado', descripciones[estado] ? estado.toUpperCase() : 'DESCONOCIDO');
+  texto('descripcion-estado', descripciones[estado] || 'Sin estado válido.');
+}
+function alertasActivas(alertas) {
+  const contenedor = $('lista-alertas');
+  if (!contenedor) return;
+  contenedor.replaceChildren();
+  if (!Array.isArray(alertas) || !alertas.length) {
+    const elemento = document.createElement('div');
+    elemento.className = 'alerta alerta-normal';
+    elemento.textContent = 'No hay alertas activas.';
+    contenedor.appendChild(elemento);
+    return;
+  }
+  for (const alerta of alertas) {
+    const elemento = document.createElement('div');
+    elemento.className = 'alerta ' + (alerta.nivel === 'critico' ? 'alerta-critica' : 'alerta-advertencia');
+    elemento.textContent = alerta.mensaje || `${alerta.recurso}: ${alerta.nivel}`;
+    contenedor.appendChild(elemento);
+  }
+}
+// Crear celdas mediante textContent evita interpretar nombres externos como HTML.
+function tabla(id, filas, cantidadColumnas, mensajeVacio) {
+  const cuerpo = $(id);
+  if (!cuerpo) return;
+  cuerpo.replaceChildren();
+  if (!filas.length) {
+    const fila = document.createElement('tr'), celda = document.createElement('td');
+    celda.colSpan = cantidadColumnas; celda.textContent = mensajeVacio;
+    fila.appendChild(celda); cuerpo.appendChild(fila); return;
+  }
+  for (const valores of filas) {
+    const fila = document.createElement('tr');
+    for (const valor of valores) {
+      const celda = document.createElement('td');
+      celda.textContent = String(valor ?? '—'); fila.appendChild(celda);
     }
+    cuerpo.appendChild(fila);
+  }
+}
+function infoServidor(datos) {
+  const sistema = datos.sistema || {};
+  texto('nombre-servidor', sistema.hostname || '—');
+  texto('sistema-operativo', [sistema.distribucion, sistema.version].filter(Boolean).join(' ') || sistema.plataforma || '—');
+  texto('arquitectura-servidor', sistema.arquitectura || '—');
+  const interfaces = Array.isArray(datos.red?.interfaces) ? datos.red.interfaces : [];
+  const ip = interfaces.find(i => i.ip4 && !i.ip4.startsWith('127.') && i.ip4 !== '0.0.0.0')?.ip4;
+  texto('ip-servidor', ip || '—');
+  const segundos = numero(datos.uptime);
+  texto('uptime-servidor', segundos === null ? '—' :
+    `${Math.floor(segundos / 86400)} d, ${Math.floor(segundos % 86400 / 3600)} h, ${Math.floor(segundos % 3600 / 60)} min`);
+  texto('tipo-datos', 'Reales (API / Socket.IO)');
+}
 
-    if (datos.length === 0) return;
+// ----------------------------------------------------
+// TRANSFORMAR EL JSON DEL BACKEND EN VALORES VISUALES
+// ----------------------------------------------------
+function procesarMetricas(datos) {
+  if (!datos || typeof datos !== 'object' || !datos.cpu || !datos.memoria) return;
+  const cpu = porcentaje(datos.cpu.usoPorcentaje);
+  const ram = porcentaje(numero(datos.memoria.usoPorcentaje) ??
+    (numero(datos.memoria.total) > 0 ? datos.memoria.usada / datos.memoria.total * 100 : null));
+  const discos = Array.isArray(datos.discos) ? datos.discos : [];
+  const discoPrincipal = discos.filter(d => porcentaje(d.usoPorcentaje) !== null)
+    .sort((a, b) => b.usoPorcentaje - a.usoPorcentaje)[0];
+  const disco = discoPrincipal ? porcentaje(discoPrincipal.usoPorcentaje) : null;
+  texto('cpu', formato(cpu)); texto('ram', formato(ram)); texto('disco', formato(disco));
+  texto('temperatura-cpu', formato(numero(datos.cpu.temperatura)));
+  barra('cpu', cpu, datos.cpu.estado);
+  barra('ram', ram, datos.memoria.estado);
+  barra('disco', disco, discoPrincipal?.estado);
+  // rx_sec y tx_sec vienen en bytes por segundo: 8 bits por byte / 1.000.000.
+  const interfacesActivas = new Set((datos.red?.interfaces || [])
+    .filter(i => i.estado === 'up' && i.nombre !== 'lo' && i.nombre !== 'lo0')
+    .map(i => i.nombre));
+  const trafico = (datos.red?.trafico || []).filter(i => interfacesActivas.has(i.nombre));
+  const rx = trafico.reduce((total, i) => total + (numero(i.recibidosPorSegundo) || 0), 0);
+  const tx = trafico.reduce((total, i) => total + (numero(i.enviadosPorSegundo) || 0), 0);
+  texto('red-entrada', trafico.length ? formato(rx * 8 / 1e6, 3) : '—');
+  texto('red-salida', trafico.length ? formato(tx * 8 / 1e6, 3) : '—');
+  guardarMedicion(historialCPU, cpu); guardarMedicion(historialRAM, ram);
+  grafico('grafico-cpu', historialCPU, '#38bdf8');
+  grafico('grafico-ram', historialRAM, '#22c55e');
+  estadoGeneral(datos.estadoGeneral);
+  alertasActivas(datos.alertas);
+  infoServidor(datos);
+  tabla('tabla-procesos', (datos.procesos || []).map(p =>
+    [p.pid, p.nombre, formato(numero(p.cpuPorcentaje), 2), formato(numero(p.memoriaPorcentaje), 2), p.estado]),
+    5, 'No hay procesos disponibles.');
+  tabla('tabla-servicios', (datos.servicios || []).map(s => [s.nombre, s.estado]),
+    2, 'No hay servicios disponibles.');
+  ultimaRecepcion = Date.now();
+  texto('hora-actualizacion', new Date().toLocaleString('es-AR'));
+  estadoConexion(true);
+}
 
-    // Dibujar el historial
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
+// ----------------------------------------------------
+// API REST: respaldo de métricas e historial persistente
+// ----------------------------------------------------
+async function consultarSistema() {
+  try {
+    const datos = await obtenerJSON('/api/sistema');
+    procesarMetricas(datos);
+  } catch (error) {
+    if (Date.now() - ultimaRecepcion > 10000) estadoConexion(false, 'No se pudo consultar /api/sistema.');
+    console.warn('Consulta de sistema:', error.message);
+  }
+}
+async function consultarEventos() {
+  try {
+    const eventos = await obtenerJSON('/api/eventos');
+    if (!Array.isArray(eventos)) return;
+    tabla('tabla-historial', eventos.slice(-100).reverse().map(ev => {
+      const fecha = ev.fecha ? new Date(ev.fecha) : null;
+      return [fecha && !Number.isNaN(fecha.getTime()) ? fecha.toLocaleString('es-AR') : '—',
+        ev.recurso, ev.mensaje, ev.nivel];
+    }), 4, 'Sin eventos registrados en el backend.');
+  } catch (error) { console.warn('Consulta de eventos:', error.message); }
+}
+async function consultarUmbrales() {
+  try {
+    const umbrales = await obtenerJSON('/api/config/umbrales');
+    for (const recurso of ['cpu', 'memoria', 'temperatura', 'disco']) {
+      for (const nivel of ['advertencia', 'critico']) {
+        const campo = $(`${recurso}-${nivel}`);
+        if (campo && umbrales[recurso]) campo.value = umbrales[recurso][nivel];
+      }
+    }
+    texto('mensaje-configuracion', 'Umbrales cargados desde el backend.');
+  } catch (error) { texto('mensaje-configuracion', 'No se pudieron leer los umbrales.'); }
+}
 
-    datos.forEach(function(valor, indice) {
-        const x = margen + indice *
-            (ancho - 2 * margen) / (MAX_MEDICIONES - 1);
-
-        const y = alto - margen -
-            (valor / 100) * (alto - 2 * margen);
-
-        if (indice === 0) {
-            ctx.moveTo(x, y);
-        } else {
-            ctx.lineTo(x, y);
-        }
+// ----------------------------------------------------
+// PUT: guardar los cuatro recursos con validación previa
+// ----------------------------------------------------
+async function guardarUmbrales(evento) {
+  evento.preventDefault();
+  const nuevos = {};
+  for (const recurso of ['cpu', 'memoria', 'temperatura', 'disco']) {
+    const advertencia = Number($(`${recurso}-advertencia`).value);
+    const critico = Number($(`${recurso}-critico`).value);
+    const maximo = recurso === 'temperatura' ? 120 : 100;
+    if (!Number.isFinite(advertencia) || !Number.isFinite(critico) ||
+        advertencia < 0 || critico > maximo || critico <= advertencia) {
+      texto('mensaje-configuracion', `Valores inválidos en ${recurso}: crítico debe ser mayor a advertencia.`);
+      return;
+    }
+    nuevos[recurso] = { advertencia, critico };
+  }
+  try {
+    const respuesta = await fetch(apiBase + '/api/config/umbrales', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nuevos)
     });
-
-    ctx.stroke();
+    if (!respuesta.ok) throw new Error('HTTP ' + respuesta.status);
+    texto('mensaje-configuracion', 'Umbrales guardados correctamente en el backend.');
+    consultarSistema();
+  } catch (error) { texto('mensaje-configuracion', `No se pudieron guardar los umbrales: ${error.message}`); }
 }
 
-function registrarHistorial(recurso, valor, estado) {
-    const registro = {
-        hora: new Date().toLocaleString("es-AR"),
-        recurso: recurso,
-        valor: valor,
-        estado: estado
-    };
-
-    historialAlertas.unshift(registro);
-
-    // Mantener solamente los últimos 100 registros
-    if (historialAlertas.length > MAX_ALERTAS) {
-        historialAlertas.pop();
-    }
-
-    try {
-        localStorage.setItem(
-            CLAVE_HISTORIAL,
-            JSON.stringify(historialAlertas)
-        );
-    } catch (error) {
-        console.error("Error al guardar el historial:", error);
-    }
-
-    mostrarHistorial();
-}
-
-function mostrarHistorial() {
-    const tabla = document.getElementById("tabla-historial");
-    tabla.innerHTML = "";
-
-    if (historialAlertas.length === 0) {
-        const fila = document.createElement("tr");
-        const celda = document.createElement("td");
-
-        celda.colSpan = 4;
-        celda.textContent = "Sin alertas registradas.";
-
-        fila.appendChild(celda);
-        tabla.appendChild(fila);
-        return;
-    }
-
-    historialAlertas.forEach(function(registro) {
-        const fila = document.createElement("tr");
-
-        const valores = [
-            registro.hora,
-            registro.recurso,
-            registro.valor + "%",
-            registro.estado
-        ];
-
-        valores.forEach(function(valor) {
-            const celda = document.createElement("td");
-            celda.textContent = valor;
-            fila.appendChild(celda);
-        });
-
-        tabla.appendChild(fila);
+// ----------------------------------------------------
+// SOCKET.IO: cliente cargado desde el servidor elegido
+// ----------------------------------------------------
+function cargarSocketIO(generacion) {
+  // Socket.IO sirve su librería de cliente por esta ruta.
+  const etiqueta = document.createElement('script');
+  etiqueta.src = apiBase + '/socket.io/socket.io.js';
+  etiqueta.onload = () => {
+    if (generacion !== instanciaConexion) return;
+    if (typeof window.io !== 'function') return;
+    socket = window.io(apiBase, { reconnection: true, timeout: 10000 });
+    socket.on('connect', () => consultarSistema());
+    socket.on('metricas', datos => {
+      procesarMetricas(datos);
+      if (Date.now() % 10000 < 2100) consultarEventos();
     });
+    socket.on('disconnect', () => estadoConexion(false, 'Socket.IO desconectado: verificando alternativa HTTP.'));
+    socket.on('connect_error', error => console.warn('Socket.IO:', error.message));
+  };
+  etiqueta.onerror = () => console.warn('No se pudo cargar Socket.IO; se utilizará la API REST.');
+  document.head.appendChild(etiqueta);
+}
+function conectar() {
+  instanciaConexion += 1;
+  const generacion = instanciaConexion;
+  if (socket) { socket.disconnect(); socket = null; }
+  if (intervaloRespaldo) clearInterval(intervaloRespaldo);
+  if (intervaloEventos) clearInterval(intervaloEventos);
+  ultimaRecepcion = 0;
+  historialCPU.length = 0; historialRAM.length = 0;
+  estadoConexion(false, 'Conectando a ' + apiBase + ' ...');
+  consultarSistema(); consultarEventos(); consultarUmbrales();
+  cargarSocketIO(generacion);
+  // Cuando Socket.IO está enviando datos, evitamos consultas REST innecesarias.
+  intervaloRespaldo = setInterval(() => {
+    if (!socket?.connected || Date.now() - ultimaRecepcion > 7000) consultarSistema();
+    if (ultimaRecepcion && Date.now() - ultimaRecepcion > 15000) estadoConexion(false, 'Sin datos recientes del backend.');
+  }, 5000);
+  intervaloEventos = setInterval(consultarEventos, 15000);
 }
 
-function borrarHistorial() {
-    const confirmar = confirm(
-        "¿Estás seguro de que querés borrar el historial?"
-    );
-
-    if (!confirmar) return;
-
-    historialAlertas = [];
-
-    localStorage.removeItem(CLAVE_HISTORIAL);
-
-    mostrarHistorial();
-}
-
-
-// Mostrar los registros guardados al abrir la página
-mostrarHistorial();
-
-// Activar el botón de borrado
-document.getElementById("borrar-historial")
-    .addEventListener("click", borrarHistorial);
-
-  
-function guardarConfiguracion(evento) {
+// ----------------------------------------------------
+// INICIO: los eventos se registran cuando existe el HTML
+// ----------------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+  $('input-ip-servidor').value = apiBase;
+  $('form-servidor').addEventListener('submit', evento => {
     evento.preventDefault();
-
-    const advertencia = Number(
-        document.getElementById("umbral-advertencia").value
-    );
-
-    const critico = Number(
-        document.getElementById("umbral-critico").value
-    );
-
-    const mensaje = document.getElementById(
-        "mensaje-configuracion"
-    );
-
-    if (
-        !Number.isInteger(advertencia) ||
-        !Number.isInteger(critico) ||
-        advertencia < 1 ||
-        advertencia >= critico ||
-        critico > 100
-    ) {
-        mensaje.textContent =
-            "La advertencia debe ser menor que el nivel crítico.";
-        mensaje.style.color = "#ef4444";
-        return;
-    }
-
+    const valor = $('input-ip-servidor').value.trim().replace(/\/+$/, '');
     try {
-        localStorage.setItem(
-            CLAVE_UMBRALES,
-            JSON.stringify({
-                advertencia: advertencia,
-                critico: critico
-            })
-        );
-    } catch (error) {
-        mensaje.textContent =
-            "No se pudo guardar la configuración.";
-        mensaje.style.color = "#ef4444";
-        return;
-    }
-
-    umbralAdvertencia = advertencia;
-    umbralCritico = critico;
-
-    mensaje.textContent = "Configuración guardada correctamente.";
-    mensaje.style.color = "#22c55e";
-
-    // Reiniciar estados para evaluar los nuevos límites
-    Object.keys(estadosAnteriores).forEach(function(recurso) {
-        delete estadosAnteriores[recurso];
-    });
-
-    actualizarRecursos();
-}
-  
-// Mostrar en el formulario los umbrales guardados
-document.getElementById("umbral-advertencia").value =
-    umbralAdvertencia;
-
-document.getElementById("umbral-critico").value =
-    umbralCritico;
-
-// Escuchar el envío del formulario
-document.getElementById("form-configuracion")
-    .addEventListener("submit", guardarConfiguracion);
-
-// Activar botón de simulación de conexión
-document.getElementById("simular-conexion")
-    .addEventListener("click", cambiarConexion);
-
-    
-// Mostrar la configuración al abrir la página
-mostrarConfiguracionServidor();
-
-// Activar el formulario del servidor
-document.getElementById("form-servidor")
-    .addEventListener("submit", guardarConfiguracionServidor);
-
-// Iniciar monitoreo simulado
-actualizarRecursos();
-setInterval(actualizarRecursos, 3000);
+      const url = new URL(valor);
+      if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password ||
+          url.pathname !== '/' || url.search || url.hash) throw new Error('URL inválida');
+      apiBase = url.origin;
+      localStorage.setItem('linuxguardBackend', apiBase);
+      texto('mensaje-servidor', 'Dirección guardada: ' + apiBase);
+      conectar();
+    } catch (_) { texto('mensaje-servidor', 'Usá una URL válida, por ejemplo http://localhost:3000'); }
+  });
+  $('form-configuracion').addEventListener('submit', guardarUmbrales);
+  conectar();
+});
