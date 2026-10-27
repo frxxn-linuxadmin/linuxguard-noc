@@ -12,8 +12,31 @@
   <title>LinuxGuard NOC</title>
 
   <!--
-    Estilos propios del dashboard.
-    Express publica este archivo desde backend/public.
+    Bootstrap 5.3.8
+
+    Se utiliza para:
+    - botones
+    - formularios
+    - tablas
+    - utilidades de espaciado
+    - helpers responsive
+
+    El diseño principal sigue siendo propio
+    mediante css/style.css.
+  -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+    crossorigin="anonymous"
+  >
+
+
+  <!--
+    Estilos personalizados de LinuxGuard.
+
+    Se carga DESPUÉS de Bootstrap para poder
+    personalizar el aspecto del dashboard.
   -->
   <link
     rel="stylesheet"
@@ -24,20 +47,12 @@
 
 <body>
 
-  <!-- ==================================================
-       CONTENEDOR GENERAL DE LA APLICACIÓN
-       ================================================== -->
-
   <div class="app-shell">
 
 
     <!-- ==================================================
          SIDEBAR
-         ==================================================
-
-         Navegación principal inspirada en dashboards
-         profesionales como Grafana / Zabbix.
-    -->
+         ================================================== -->
 
     <aside class="sidebar">
 
@@ -108,13 +123,6 @@
       </nav>
 
 
-      <!--
-        Estado resumido.
-
-        JavaScript actualiza los mismos datos
-        que se muestran en el dashboard principal.
-      -->
-
       <div class="sidebar-status">
 
         <div class="sidebar-status-line">
@@ -145,7 +153,7 @@
 
 
     <!-- ==================================================
-         CONTENIDO PRINCIPAL
+         ÁREA PRINCIPAL
          ================================================== -->
 
     <div class="dashboard-area">
@@ -172,10 +180,6 @@
 
         <div class="topbar-tools">
 
-          <!--
-            Estado real de Socket.IO / API.
-          -->
-
           <div
             id="panel-conexion"
             class="conexion-inactiva top-status"
@@ -189,7 +193,7 @@
 
             <span
               id="descripcion-conexion"
-              class="sr-only"
+              class="visually-hidden"
             >
               Esperando conexión.
             </span>
@@ -198,12 +202,14 @@
 
 
           <!--
-            URL del backend.
+            Formulario Bootstrap.
 
-            Se mantiene porque también será útil
-            cuando el frontend se empaquete como APK.
+            form-control:
+            estilo Bootstrap para inputs.
+
+            btn:
+            componente Bootstrap de botón.
           -->
-
           <form
             id="form-servidor"
             class="backend-selector"
@@ -211,6 +217,7 @@
 
             <input
               id="input-ip-servidor"
+              class="form-control form-control-sm"
               type="url"
               placeholder="http://localhost:3000"
               required
@@ -218,6 +225,7 @@
 
             <button
               id="guardar-servidor"
+              class="btn btn-warning btn-sm"
               type="submit"
             >
               Conectar
@@ -243,16 +251,18 @@
       </header>
 
 
-      <main id="dashboard">
+      <main
+        id="dashboard"
+        class="container-fluid"
+      >
 
-
-        <!-- Mensajes auxiliares -->
 
         <p
           id="mensaje-servidor"
-          class="mensaje-sistema"
+          class="mensaje-sistema mb-2"
           aria-live="polite"
         ></p>
+
 
         <p
           id="aviso-desconexion"
@@ -264,7 +274,7 @@
 
 
         <!-- ==================================================
-             CABECERA DEL DASHBOARD
+             CABECERA
              ================================================== -->
 
         <section class="dashboard-title">
@@ -285,11 +295,6 @@
 
           </div>
 
-
-          <!--
-            El backend calcula estadoGeneral según
-            los umbrales configurados.
-          -->
 
           <div
             id="panel-estado"
@@ -314,14 +319,8 @@
 
 
         <!-- ==================================================
-             GAUGES PRINCIPALES
-             ==================================================
-
-             Los valores son enviados por el backend.
-
-             app.js modifica la variable CSS --angulo
-             de cada gauge.
-        -->
+             GAUGES
+             ================================================== -->
 
         <section
           id="recursos"
@@ -743,13 +742,11 @@
 
 
         <!-- ==================================================
-             INFORMACIÓN + GRÁFICOS
+             INFORMACIÓN + GRÁFICO
              ================================================== -->
 
         <section class="two-column">
 
-
-          <!-- INFORMACIÓN -->
 
           <article
             id="informacion-servidor"
@@ -802,7 +799,7 @@
                 <dd>
                   <span
                     id="tipo-datos"
-                    class="realtime-badge"
+                    class="badge text-bg-success"
                   >
                     Esperando datos
                   </span>
@@ -814,8 +811,6 @@
 
           </article>
 
-
-          <!-- GRÁFICOS -->
 
           <article
             id="graficos"
@@ -847,12 +842,6 @@
 
             </div>
 
-
-            <!--
-              Conservamos los canvas actuales.
-              app.js sigue dibujando las últimas
-              20 mediciones.
-            -->
 
             <canvas
               id="grafico-cpu"
@@ -899,7 +888,16 @@
 
             <div class="tabla-contenedor">
 
-              <table>
+              <!--
+                Bootstrap:
+                table       -> tabla base
+                table-dark  -> variante oscura
+                table-hover -> resalta filas
+                align-middle -> centra contenido verticalmente
+              -->
+              <table
+                class="table table-dark table-hover align-middle mb-0"
+              >
 
                 <thead>
 
@@ -950,7 +948,9 @@
 
             <div class="tabla-contenedor">
 
-              <table>
+              <table
+                class="table table-dark table-hover align-middle mb-0"
+              >
 
                 <thead>
 
@@ -1037,7 +1037,9 @@
 
             <div class="tabla-contenedor">
 
-              <table>
+              <table
+                class="table table-dark table-hover align-middle mb-0"
+              >
 
                 <thead>
 
@@ -1107,6 +1109,7 @@
 
                   <input
                     id="cpu-advertencia"
+                    class="form-control form-control-sm"
                     type="number"
                     min="0"
                     max="100"
@@ -1119,6 +1122,7 @@
 
                   <input
                     id="cpu-critico"
+                    class="form-control form-control-sm"
                     type="number"
                     min="0"
                     max="100"
@@ -1140,6 +1144,7 @@
 
                   <input
                     id="memoria-advertencia"
+                    class="form-control form-control-sm"
                     type="number"
                     min="0"
                     max="100"
@@ -1152,6 +1157,7 @@
 
                   <input
                     id="memoria-critico"
+                    class="form-control form-control-sm"
                     type="number"
                     min="0"
                     max="100"
@@ -1173,6 +1179,7 @@
 
                   <input
                     id="temperatura-advertencia"
+                    class="form-control form-control-sm"
                     type="number"
                     min="0"
                     max="120"
@@ -1185,6 +1192,7 @@
 
                   <input
                     id="temperatura-critico"
+                    class="form-control form-control-sm"
                     type="number"
                     min="0"
                     max="120"
@@ -1206,6 +1214,7 @@
 
                   <input
                     id="disco-advertencia"
+                    class="form-control form-control-sm"
                     type="number"
                     min="0"
                     max="100"
@@ -1218,6 +1227,7 @@
 
                   <input
                     id="disco-critico"
+                    class="form-control form-control-sm"
                     type="number"
                     min="0"
                     max="100"
@@ -1230,6 +1240,7 @@
 
               <button
                 id="guardar-configuracion"
+                class="btn btn-warning"
                 type="submit"
               >
                 Guardar umbrales
@@ -1240,6 +1251,7 @@
 
             <p
               id="mensaje-configuracion"
+              class="mt-2 mb-0"
               aria-live="polite"
             ></p>
 
@@ -1263,13 +1275,21 @@
 
 
   <!--
-    JavaScript principal.
+    Bootstrap Bundle.
 
-    Consume:
-    - API REST
-    - Socket.IO
+    Incluye los plugins JavaScript de Bootstrap.
+    Se carga aunque actualmente usemos principalmente
+    sus componentes CSS y utilidades.
+  -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+    crossorigin="anonymous"
+  ></script>
 
-    No contiene métricas simuladas.
+
+  <!--
+    Lógica propia de LinuxGuard.
   -->
   <script src="js/app.js"></script>
 
