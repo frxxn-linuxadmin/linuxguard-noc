@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <title>LinuxGuard NOC</title>
+
+  <!--
+    Estilos propios del dashboard.
+    Express publica este archivo desde backend/public.
+  -->
+  <link
+    rel="stylesheet"
+    href="css/style.css"
+  >
+</head>
+
+
+<body>
+
+  <!-- ==================================================
+       CONTENEDOR GENERAL DE LA APLICACIÓN
+       ================================================== -->
+
+  <div class="app-shell">
+
+
+    <!-- ==================================================
+         SIDEBAR
+         ==================================================
+
+         Navegación principal inspirada en dashboards
+         profesionales como Grafana / Zabbix.
+    -->
+
+    <aside class="sidebar">
+
+      <div class="brand">
+
+        <div class="brand-logo">
+          LG
+        </div>
+
+        <div>
+          <strong>LinuxGuard NOC</strong>
+          <span>Monitoreo GNU/Linux</span>
+        </div>
+
+      </div>
+
+
+      <nav class="sidebar-nav">
+
+        <a
+          class="activo"
+          href="#dashboard"
+        >
+          <span>▦</span>
+          Dashboard
+        </a>
+
+        <a href="#informacion-servidor">
+          <span>▣</span>
+          Sistema
+        </a>
+
+        <a href="#recursos">
+          <span>◉</span>
+          Recursos
+        </a>
+
+        <a href="#graficos">
+          <span>⌁</span>
+          Gráficos
+        </a>
+
+        <a href="#procesos">
+          <span>⚙</span>
+          Procesos
+        </a>
+
+        <a href="#servicios">
+          <span>◆</span>
+          Servicios
+        </a>
+
+        <a href="#alertas">
+          <span>!</span>
+          Alertas
+        </a>
+
+        <a href="#historial-alertas">
+          <span>▤</span>
+          Historial
+        </a>
+
+        <a href="#configuracion">
+          <span>⚙</span>
+          Configuración
+        </a>
+
+      </nav>
+
+
+      <!--
+        Estado resumido.
+
+        JavaScript actualiza los mismos datos
+        que se muestran en el dashboard principal.
+      -->
+
+      <div class="sidebar-status">
+
+        <div class="sidebar-status-line">
+
+          <span class="status-dot"></span>
+
+          <span id="sidebar-estado">
+            Conectando
+          </span>
+
+        </div>
+
+        <small id="sidebar-servidor">
+          —
+        </small>
+
+        <small>
+          Última actualización
+        </small>
+
+        <strong id="sidebar-hora">
+          Sin datos
+        </strong>
+
+      </div>
+
+    </aside>
+
+
+    <!-- ==================================================
+         CONTENIDO PRINCIPAL
+         ================================================== -->
+
+    <div class="dashboard-area">
+
+
+      <!-- ==================================================
+           TOPBAR
+           ================================================== -->
+
+      <header class="topbar">
+
+        <div>
+
+          <h1>
+            Dashboard
+          </h1>
+
+          <p>
+            Estado general del servidor en tiempo real
+          </p>
+
+        </div>
+
+
+        <div class="topbar-tools">
+
+          <!--
+            Estado real de Socket.IO / API.
+          -->
+
+          <div
+            id="panel-conexion"
+            class="conexion-inactiva top-status"
+          >
+
+            <span class="status-dot"></span>
+
+            <strong id="texto-conexion">
+              DESCONECTADO
+            </strong>
+
+            <span
+              id="descripcion-conexion"
+              class="sr-only"
+            >
+              Esperando conexión.
+            </span>
+
+          </div>
+
+
+          <!--
+            URL del backend.
+
+            Se mantiene porque también será útil
+            cuando el frontend se empaquete como APK.
+          -->
+
+          <form
+            id="form-servidor"
+            class="backend-selector"
+          >
+
+            <input
+              id="input-ip-servidor"
+              type="url"
+              placeholder="http://localhost:3000"
+              required
+            >
+
+            <button
+              id="guardar-servidor"
+              type="submit"
+            >
+              Conectar
+            </button>
+
+          </form>
+
+
+          <div class="ultima-actualizacion">
+
+            <span>
+              ◷
+            </span>
+
+            <span id="hora-actualizacion">
+              Sin datos
+            </span>
+
+          </div>
+
+        </div>
+
+      </header>
+
+
+      <main id="dashboard">
+
+
+        <!-- Mensajes auxiliares -->
+
+        <p
+          id="mensaje-servidor"
+          class="mensaje-sistema"
+          aria-live="polite"
+        ></p>
+
+        <p
+          id="aviso-desconexion"
+          class="aviso-desconexion"
+          hidden
+        >
+          Sin conexión: las métricas no se están actualizando.
+        </p>
+
+
+        <!-- ==================================================
+             CABECERA DEL DASHBOARD
+             ================================================== -->
+
+        <section class="dashboard-title">
+
+          <div class="dashboard-icon">
+            ▦
+          </div>
+
+          <div>
+
+            <h2>
+              Dashboard del servidor
+            </h2>
+
+            <p>
+              Métricas, procesos y servicios GNU/Linux
+            </p>
+
+          </div>
+
+
+          <!--
+            El backend calcula estadoGeneral según
+            los umbrales configurados.
+          -->
+
+          <div
+            id="panel-estado"
+            class="estado-box"
+          >
+
+            <small>
+              ESTADO GENERAL
+            </small>
+
+            <strong id="texto-estado">
+              DESCONOCIDO
+            </strong>
+
+            <span id="descripcion-estado">
+              Esperando métricas reales.
+            </span>
+
+          </div>
+
+        </section>
+
+
+        <!-- ==================================================
+             GAUGES PRINCIPALES
+             ==================================================
+
+             Los valores son enviados por el backend.
+
+             app.js modifica la variable CSS --angulo
+             de cada gauge.
+        -->
+
+        <section
+          id="recursos"
+          class="metrics-grid"
+        >
+
+
+          <!-- CPU -->
+
+          <article class="metric-card">
+
+            <div class="metric-title">
+
+              <span class="metric-icon orange">
+                CPU
+              </span>
+
+              <strong>
+                CPU
+              </strong>
+
+            </div>
+
+
+            <div class="metric-body">
+
+              <div
+                id="gauge-cpu"
+                class="gauge"
+              >
+
+                <div class="gauge-ring"></div>
+
+                <div class="gauge-value">
+
+                  <strong>
+                    <span id="cpu">—</span>%
+                  </strong>
+
+                  <small>
+                    Uso actual
+                  </small>
+
+                </div>
+
+              </div>
+
+
+              <div class="thresholds">
+
+                <div class="threshold warning">
+
+                  <span></span>
+
+                  <strong id="cpu-advertencia-label">
+                    —
+                  </strong>
+
+                  <small>
+                    Advertencia
+                  </small>
+
+                </div>
+
+
+                <div class="threshold critical">
+
+                  <span></span>
+
+                  <strong id="cpu-critico-label">
+                    —
+                  </strong>
+
+                  <small>
+                    Crítico
+                  </small>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </article>
+
+
+          <!-- RAM -->
+
+          <article class="metric-card">
+
+            <div class="metric-title">
+
+              <span class="metric-icon blue">
+                RAM
+              </span>
+
+              <strong>
+                Memoria RAM
+              </strong>
+
+            </div>
+
+
+            <div class="metric-body">
+
+              <div
+                id="gauge-ram"
+                class="gauge gauge-blue"
+              >
+
+                <div class="gauge-ring"></div>
+
+                <div class="gauge-value">
+
+                  <strong>
+                    <span id="ram">—</span>%
+                  </strong>
+
+                  <small>
+                    Uso actual
+                  </small>
+
+                </div>
+
+              </div>
+
+
+              <div class="thresholds">
+
+                <div class="threshold warning">
+
+                  <span></span>
+
+                  <strong id="memoria-advertencia-label">
+                    —
+                  </strong>
+
+                  <small>
+                    Advertencia
+                  </small>
+
+                </div>
+
+
+                <div class="threshold critical">
+
+                  <span></span>
+
+                  <strong id="memoria-critico-label">
+                    —
+                  </strong>
+
+                  <small>
+                    Crítico
+                  </small>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </article>
+
+
+          <!-- DISCO -->
+
+          <article class="metric-card">
+
+            <div class="metric-title">
+
+              <span class="metric-icon orange">
+                SSD
+              </span>
+
+              <strong>
+                Disco (mayor uso)
+              </strong>
+
+            </div>
+
+
+            <div class="metric-body">
+
+              <div
+                id="gauge-disco"
+                class="gauge"
+              >
+
+                <div class="gauge-ring"></div>
+
+                <div class="gauge-value">
+
+                  <strong>
+                    <span id="disco">—</span>%
+                  </strong>
+
+                  <small>
+                    Uso actual
+                  </small>
+
+                </div>
+
+              </div>
+
+
+              <div class="thresholds">
+
+                <div class="threshold warning">
+
+                  <span></span>
+
+                  <strong id="disco-advertencia-label">
+                    —
+                  </strong>
+
+                  <small>
+                    Advertencia
+                  </small>
+
+                </div>
+
+
+                <div class="threshold critical">
+
+                  <span></span>
+
+                  <strong id="disco-critico-label">
+                    —
+                  </strong>
+
+                  <small>
+                    Crítico
+                  </small>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </article>
+
+
+          <!-- TEMPERATURA -->
+
+          <article class="metric-card">
+
+            <div class="metric-title">
+
+              <span class="metric-icon green">
+                °C
+              </span>
+
+              <strong>
+                Temperatura CPU
+              </strong>
+
+            </div>
+
+
+            <div class="metric-body">
+
+              <div
+                id="gauge-temperatura"
+                class="gauge gauge-green"
+              >
+
+                <div class="gauge-ring"></div>
+
+                <div class="gauge-value">
+
+                  <strong>
+                    <span id="temperatura-cpu">—</span>°
+                  </strong>
+
+                  <small>
+                    Temperatura
+                  </small>
+
+                </div>
+
+              </div>
+
+
+              <div class="thresholds">
+
+                <div class="threshold warning">
+
+                  <span></span>
+
+                  <strong id="temperatura-advertencia-label">
+                    —
+                  </strong>
+
+                  <small>
+                    Advertencia
+                  </small>
+
+                </div>
+
+
+                <div class="threshold critical">
+
+                  <span></span>
+
+                  <strong id="temperatura-critico-label">
+                    —
+                  </strong>
+
+                  <small>
+                    Crítico
+                  </small>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </article>
+
+        </section>
+
+
+        <!-- ==================================================
+             MÉTRICAS SECUNDARIAS
+             ================================================== -->
+
+        <section class="secondary-metrics">
+
+
+          <article>
+
+            <span class="mini-icon">
+              ↓
+            </span>
+
+            <div>
+
+              <small>
+                Red - Descarga
+              </small>
+
+              <strong>
+                <span id="red-entrada">—</span>
+                Mbps
+              </strong>
+
+            </div>
+
+          </article>
+
+
+          <article>
+
+            <span class="mini-icon purple">
+              ↑
+            </span>
+
+            <div>
+
+              <small>
+                Red - Subida
+              </small>
+
+              <strong>
+                <span id="red-salida">—</span>
+                Mbps
+              </strong>
+
+            </div>
+
+          </article>
+
+
+          <article>
+
+            <span class="mini-icon">
+              ◷
+            </span>
+
+            <div>
+
+              <small>
+                Tiempo de actividad
+              </small>
+
+              <strong id="uptime-servidor">
+                —
+              </strong>
+
+            </div>
+
+          </article>
+
+
+          <article>
+
+            <span class="mini-icon green">
+              ⚙
+            </span>
+
+            <div>
+
+              <small>
+                Procesos activos
+              </small>
+
+              <strong id="procesos-activos">
+                —
+              </strong>
+
+            </div>
+
+          </article>
+
+        </section>
+
+
+        <!-- ==================================================
+             INFORMACIÓN + GRÁFICOS
+             ================================================== -->
+
+        <section class="two-column">
+
+
+          <!-- INFORMACIÓN -->
+
+          <article
+            id="informacion-servidor"
+            class="panel"
+          >
+
+            <div class="panel-title">
+
+              <span>
+                ⓘ
+              </span>
+
+              <h2>
+                Información del servidor
+              </h2>
+
+            </div>
+
+
+            <dl class="server-info">
+
+              <div>
+                <dt>Nombre del servidor</dt>
+                <dd id="nombre-servidor">—</dd>
+              </div>
+
+              <div>
+                <dt>Sistema operativo</dt>
+                <dd id="sistema-operativo">—</dd>
+              </div>
+
+              <div>
+                <dt>Dirección IP</dt>
+                <dd id="ip-servidor">—</dd>
+              </div>
+
+              <div>
+                <dt>Arquitectura</dt>
+                <dd id="arquitectura-servidor">—</dd>
+              </div>
+
+              <div>
+                <dt>Tiempo de actividad</dt>
+                <dd id="uptime-servidor-info">—</dd>
+              </div>
+
+              <div>
+                <dt>Tipo de datos</dt>
+
+                <dd>
+                  <span
+                    id="tipo-datos"
+                    class="realtime-badge"
+                  >
+                    Esperando datos
+                  </span>
+                </dd>
+
+              </div>
+
+            </dl>
+
+          </article>
+
+
+          <!-- GRÁFICOS -->
+
+          <article
+            id="graficos"
+            class="panel chart-panel"
+          >
+
+            <div class="panel-title">
+
+              <span>
+                ⌁
+              </span>
+
+              <h2>
+                Historial de recursos
+              </h2>
+
+            </div>
+
+
+            <div class="chart-legend">
+
+              <span class="legend-cpu">
+                CPU (%)
+              </span>
+
+              <span class="legend-ram">
+                RAM (%)
+              </span>
+
+            </div>
+
+
+            <!--
+              Conservamos los canvas actuales.
+              app.js sigue dibujando las últimas
+              20 mediciones.
+            -->
+
+            <canvas
+              id="grafico-cpu"
+              width="500"
+              height="220"
+            ></canvas>
+
+            <canvas
+              id="grafico-ram"
+              width="500"
+              height="220"
+              class="chart-overlay"
+            ></canvas>
+
+          </article>
+
+        </section>
+
+
+        <!-- ==================================================
+             PROCESOS + SERVICIOS
+             ================================================== -->
+
+        <section class="two-column large-left">
+
+
+          <article
+            id="procesos"
+            class="panel"
+          >
+
+            <div class="panel-title">
+
+              <span>
+                ⚙
+              </span>
+
+              <h2>
+                Procesos con mayor uso de CPU
+              </h2>
+
+            </div>
+
+
+            <div class="tabla-contenedor">
+
+              <table>
+
+                <thead>
+
+                  <tr>
+                    <th>PID</th>
+                    <th>Proceso</th>
+                    <th>CPU %</th>
+                    <th>RAM %</th>
+                    <th>Estado</th>
+                  </tr>
+
+                </thead>
+
+                <tbody id="tabla-procesos">
+
+                  <tr>
+                    <td colspan="5">
+                      Esperando datos.
+                    </td>
+                  </tr>
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </article>
+
+
+          <article
+            id="servicios"
+            class="panel"
+          >
+
+            <div class="panel-title">
+
+              <span>
+                ◆
+              </span>
+
+              <h2>
+                Servicios del sistema
+              </h2>
+
+            </div>
+
+
+            <div class="tabla-contenedor">
+
+              <table>
+
+                <thead>
+
+                  <tr>
+                    <th>Servicio</th>
+                    <th>Estado</th>
+                  </tr>
+
+                </thead>
+
+                <tbody id="tabla-servicios">
+
+                  <tr>
+
+                    <td colspan="2">
+                      Esperando datos.
+                    </td>
+
+                  </tr>
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </article>
+
+        </section>
+
+
+        <!-- ==================================================
+             ALERTAS + HISTORIAL
+             ================================================== -->
+
+        <section class="two-column">
+
+
+          <article
+            id="alertas"
+            class="panel"
+          >
+
+            <div class="panel-title">
+
+              <span class="alert-icon">
+                !
+              </span>
+
+              <h2>
+                Alertas activas
+              </h2>
+
+            </div>
+
+
+            <div
+              id="lista-alertas"
+              aria-live="polite"
+            >
+              Esperando datos.
+            </div>
+
+          </article>
+
+
+          <article
+            id="historial-alertas"
+            class="panel"
+          >
+
+            <div class="panel-title">
+
+              <span>
+                ▤
+              </span>
+
+              <h2>
+                Historial de eventos
+              </h2>
+
+            </div>
+
+
+            <div class="tabla-contenedor">
+
+              <table>
+
+                <thead>
+
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Recurso</th>
+                    <th>Mensaje</th>
+                    <th>Nivel</th>
+                  </tr>
+
+                </thead>
+
+                <tbody id="tabla-historial">
+
+                  <tr>
+                    <td colspan="4">
+                      Sin eventos cargados.
+                    </td>
+                  </tr>
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </article>
+
+        </section>
+
+
+        <!-- ==================================================
+             CONFIGURACIÓN DE UMBRALES
+             ================================================== -->
+
+        <section
+          id="configuracion"
+          class="panel config-panel"
+        >
+
+          <div class="panel-title">
+
+            <span>
+              ⚙
+            </span>
+
+            <h2>
+              Configuración de umbrales de alerta
+            </h2>
+
+          </div>
+
+
+          <form id="form-configuracion">
+
+            <div class="config-grid">
+
+
+              <div class="config-resource">
+
+                <strong>
+                  CPU (%)
+                </strong>
+
+                <label>
+                  Advertencia
+
+                  <input
+                    id="cpu-advertencia"
+                    type="number"
+                    min="0"
+                    max="100"
+                    required
+                  >
+                </label>
+
+                <label>
+                  Crítico
+
+                  <input
+                    id="cpu-critico"
+                    type="number"
+                    min="0"
+                    max="100"
+                    required
+                  >
+                </label>
+
+              </div>
+
+
+              <div class="config-resource">
+
+                <strong>
+                  Memoria RAM (%)
+                </strong>
+
+                <label>
+                  Advertencia
+
+                  <input
+                    id="memoria-advertencia"
+                    type="number"
+                    min="0"
+                    max="100"
+                    required
+                  >
+                </label>
+
+                <label>
+                  Crítico
+
+                  <input
+                    id="memoria-critico"
+                    type="number"
+                    min="0"
+                    max="100"
+                    required
+                  >
+                </label>
+
+              </div>
+
+
+              <div class="config-resource">
+
+                <strong>
+                  Temperatura CPU (°C)
+                </strong>
+
+                <label>
+                  Advertencia
+
+                  <input
+                    id="temperatura-advertencia"
+                    type="number"
+                    min="0"
+                    max="120"
+                    required
+                  >
+                </label>
+
+                <label>
+                  Crítico
+
+                  <input
+                    id="temperatura-critico"
+                    type="number"
+                    min="0"
+                    max="120"
+                    required
+                  >
+                </label>
+
+              </div>
+
+
+              <div class="config-resource">
+
+                <strong>
+                  Disco (%)
+                </strong>
+
+                <label>
+                  Advertencia
+
+                  <input
+                    id="disco-advertencia"
+                    type="number"
+                    min="0"
+                    max="100"
+                    required
+                  >
+                </label>
+
+                <label>
+                  Crítico
+
+                  <input
+                    id="disco-critico"
+                    type="number"
+                    min="0"
+                    max="100"
+                    required
+                  >
+                </label>
+
+              </div>
+
+
+              <button
+                id="guardar-configuracion"
+                type="submit"
+              >
+                Guardar umbrales
+              </button>
+
+            </div>
+
+
+            <p
+              id="mensaje-configuracion"
+              aria-live="polite"
+            ></p>
+
+          </form>
+
+        </section>
+
+
+      </main>
+
+
+      <footer>
+
+        LinuxGuard NOC · Práctica Profesionalizante III
+
+      </footer>
+
+    </div>
+
+  </div>
+
+
+  <!--
+    JavaScript principal.
+
+    Consume:
+    - API REST
+    - Socket.IO
+
+    No contiene métricas simuladas.
+  -->
+  <script src="js/app.js"></script>
+
+</body>
+
+</html>
