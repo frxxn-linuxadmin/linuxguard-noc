@@ -699,3 +699,15 @@ Desarrollo:
 Proyecto:
 
 **LinuxGuard NOC**
+
+## GitHub Helper
+
+Para facilitar la revisión y análisis del repositorio se utilizó GitIngest.
+
+Repositorio en GitHub:
+
+https://github.com/frxxn-linuxadmin/linuxguard-noc
+
+Revisión mediante GitIngest:
+
+https://gitingest.com/frxxn-linuxadmin/linuxguard-noc
