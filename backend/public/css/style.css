@@ -900,7 +900,7 @@ main {
 
   grid-template-columns:
     repeat(
-      4,
+      3,
       minmax(0, 1fr)
     );
 

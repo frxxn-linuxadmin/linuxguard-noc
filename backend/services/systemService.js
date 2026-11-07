@@ -18,10 +18,6 @@ export async function obtenerDatosSistema() {
   // Obtiene el porcentaje de uso actual del procesador.
   const cargaCpu = await si.currentLoad();
 
-  // Obtiene la temperatura actual del procesador.
-  // En algunos equipos puede devolver null si el sensor no está disponible.
-  const temperaturaCpu = await si.cpuTemperature();
-
   // Obtiene información de la memoria RAM.
   const memoria = await si.mem();
 
@@ -63,10 +59,7 @@ const procesos = await si.processes();
       velocidadGHz: cpu.speed,
 
       // Redondeamos el uso del CPU a 2 decimales.
-      usoPorcentaje: Number(cargaCpu.currentLoad.toFixed(2)),
-
-      // Temperatura principal del CPU.
-      temperatura: temperaturaCpu.main
+      usoPorcentaje: Number(cargaCpu.currentLoad.toFixed(2))
     },
 
     // Información de memoria RAM.

@@ -474,7 +474,7 @@ io.on("connection", (socket) => {
 
           /*
            * Analizamos CPU, RAM, disco,
-           * temperatura, etc. utilizando
+           * métricas del sistema utilizando
            * los umbrales configurados.
            */
           const datosAnalizados =

@@ -565,84 +565,6 @@
           </article>
 
 
-          <!-- TEMPERATURA -->
-
-          <article class="metric-card">
-
-            <div class="metric-title">
-
-              <span class="metric-icon green">
-                °C
-              </span>
-
-              <strong>
-                Temperatura CPU
-              </strong>
-
-            </div>
-
-
-            <div class="metric-body">
-
-              <div
-                id="gauge-temperatura"
-                class="gauge gauge-green"
-              >
-
-                <div class="gauge-ring"></div>
-
-                <div class="gauge-value">
-
-                  <strong>
-                    <span id="temperatura-cpu">—</span>°
-                  </strong>
-
-                  <small>
-                    Temperatura
-                  </small>
-
-                </div>
-
-              </div>
-
-
-              <div class="thresholds">
-
-                <div class="threshold warning">
-
-                  <span></span>
-
-                  <strong id="temperatura-advertencia-label">
-                    —
-                  </strong>
-
-                  <small>
-                    Advertencia
-                  </small>
-
-                </div>
-
-
-                <div class="threshold critical">
-
-                  <span></span>
-
-                  <strong id="temperatura-critico-label">
-                    —
-                  </strong>
-
-                  <small>
-                    Crítico
-                  </small>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          </article>
-
         </section>
 
 
@@ -1161,41 +1083,6 @@
                     type="number"
                     min="0"
                     max="100"
-                    required
-                  >
-                </label>
-
-              </div>
-
-
-              <div class="config-resource">
-
-                <strong>
-                  Temperatura CPU (°C)
-                </strong>
-
-                <label>
-                  Advertencia
-
-                  <input
-                    id="temperatura-advertencia"
-                    class="form-control form-control-sm"
-                    type="number"
-                    min="0"
-                    max="120"
-                    required
-                  >
-                </label>
-
-                <label>
-                  Crítico
-
-                  <input
-                    id="temperatura-critico"
-                    class="form-control form-control-sm"
-                    type="number"
-                    min="0"
-                    max="120"
                     required
                   >
                 </label>

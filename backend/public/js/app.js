@@ -11,7 +11,7 @@
  * - Conectarse al backend LinuxGuard.
  * - Consultar la API REST.
  * - Recibir métricas en tiempo real mediante Socket.IO.
- * - Actualizar CPU, RAM, disco, temperatura y red.
+ * - Actualizar CPU, RAM, disco y red.
  * - Actualizar los gauges del dashboard.
  * - Mostrar información del servidor.
  * - Mostrar procesos y servicios.
@@ -1274,16 +1274,6 @@ function procesarMetricas(datos) {
 
 
   // ==========================================================
-  // TEMPERATURA
-  // ==========================================================
-
-  const temperatura =
-    numero(
-      datos.cpu.temperatura
-    );
-
-
-  // ==========================================================
   // MOSTRAR VALORES
   // ==========================================================
 
@@ -1302,12 +1292,6 @@ function procesarMetricas(datos) {
   texto(
     "disco",
     formato(disco)
-  );
-
-
-  texto(
-    "temperatura-cpu",
-    formato(temperatura)
   );
 
 
@@ -1330,13 +1314,6 @@ function procesarMetricas(datos) {
   actualizarGauge(
     "gauge-disco",
     disco
-  );
-
-
-  actualizarGauge(
-    "gauge-temperatura",
-    temperatura,
-    120
   );
 
 
@@ -1741,7 +1718,6 @@ async function consultarUmbrales() {
     const recursos = [
       "cpu",
       "memoria",
-      "temperatura",
       "disco"
     ];
 
@@ -1821,22 +1797,15 @@ async function consultarUmbrales() {
       // ETIQUETAS JUNTO A LOS GAUGES
       // ------------------------------------------------------
 
-      const unidad =
-        recurso ===
-        "temperatura"
-          ? "°C"
-          : "%";
-
-
       texto(
         `${recurso}-advertencia-label`,
-        `${advertencia}${unidad}`
+        `${advertencia}%`
       );
 
 
       texto(
         `${recurso}-critico-label`,
-        `${critico}${unidad}`
+        `${critico}%`
       );
     }
 
@@ -1886,7 +1855,6 @@ async function guardarUmbrales(
   const recursos = [
     "cpu",
     "memoria",
-    "temperatura",
     "disco"
   ];
 
@@ -1933,11 +1901,7 @@ async function guardarUmbrales(
       );
 
 
-    const maximo =
-      recurso ===
-      "temperatura"
-        ? 120
-        : 100;
+    const maximo = 100;
 
 
     if (

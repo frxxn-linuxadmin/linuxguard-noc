@@ -103,29 +103,6 @@ export async function analizarEstadoSistema(datos) {
 
 
   // --------------------------------------------------
-  // TEMPERATURA CPU
-  // --------------------------------------------------
-
-  const estadoTemperatura = obtenerEstado(
-    datos.cpu.temperatura,
-    umbrales.temperatura.advertencia,
-    umbrales.temperatura.critico
-  );
-
-  if (
-    estadoTemperatura !== "normal" &&
-    estadoTemperatura !== "desconocido"
-  ) {
-    alertas.push({
-      recurso: "temperatura",
-      nivel: estadoTemperatura,
-      mensaje:
-        `Temperatura del CPU en ${datos.cpu.temperatura} °C`
-    });
-  }
-
-
-  // --------------------------------------------------
   // DISCOS
   // --------------------------------------------------
 

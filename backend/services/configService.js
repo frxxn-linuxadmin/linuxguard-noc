@@ -58,7 +58,6 @@ function validarUmbrales(umbrales) {
   const recursos = [
     "cpu",
     "memoria",
-    "temperatura",
     "disco"
   ];
 
