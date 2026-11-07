@@ -39,7 +39,7 @@ flowchart LR
 
     E --> I[Métricas en tiempo real]
 
-    G --> J[Navegador]
+    G --> J[Navegador / Android]
     H --> J
     I --> J
 ```
@@ -93,6 +93,13 @@ Servidor Debian
 - Git
 - GitHub
 
+### Aplicación móvil
+
+- HTML2Apk Converter
+- Android WebView
+- APK firmada
+- Android API 21 o superior
+
 ---
 
 ## Funcionalidades
@@ -101,7 +108,6 @@ LinuxGuard NOC permite monitorear:
 
 - Uso de CPU.
 - Modelo y cantidad de núcleos del procesador.
-- Temperatura de CPU.
 - Uso de memoria RAM.
 - Uso de discos.
 - Interfaces de red.
@@ -176,6 +182,10 @@ linuxguard-noc/
 │   ├── pnpm-lock.yaml
 │   └── server.js
 │
+├── docs/
+│   ├── LinuxGuard_NOC_Documentacion_Final_v1.1.docx
+│   └── LinuxGuard_NOC_Documentacion_Final_v1.1.pdf
+│
 └── README.md
 ```
 
@@ -216,7 +226,6 @@ Entre otras cosas obtiene:
 
 - CPU;
 - memoria;
-- temperatura;
 - discos;
 - interfaces de red;
 - tráfico;
@@ -628,12 +637,11 @@ El dashboard muestra:
 - CPU;
 - RAM;
 - disco;
-- temperatura;
 - red;
 - uptime;
 - procesos;
 - servicios;
-- gráficos históricos;
+- gráficos históricos de la sesión;
 - alertas;
 - historial de eventos;
 - configuración de umbrales.
@@ -646,24 +654,128 @@ No representan un historial permanente.
 
 ## Aplicación móvil
 
-El frontend fue diseñado de forma responsive para permitir su utilización desde dispositivos móviles.
+LinuxGuard NOC también dispone de una aplicación Android generada mediante **HTML2Apk Converter**.
 
-La arquitectura permite empaquetar el frontend mediante herramientas como HTML2APK.
+El frontend se adaptó para funcionar dentro de un WebView y utiliza Bootstrap de forma local para no depender de una conexión a Internet para cargar los estilos de la interfaz.
 
-Para acceder desde Android, el dispositivo debe poder conectarse a la dirección IP del servidor donde se ejecuta LinuxGuard.
+La aplicación Android se conecta al mismo backend que la versión web:
 
-En un dispositivo móvil:
+```text
+http://IP_DEL_SERVIDOR:3000
+```
+
+El dispositivo Android debe encontrarse en una red desde la cual pueda alcanzar al servidor GNU/Linux.
+
+En Android:
 
 ```text
 localhost
 ```
 
-representa el propio teléfono, no el servidor GNU/Linux.
+representa el propio teléfono, no el servidor Debian.
 
-Por este motivo debe utilizarse una dirección alcanzable, por ejemplo:
+La aplicación fue compilada, instalada y probada en un dispositivo Android real.
+
+---
+
+## Versionado
+
+Durante el desarrollo se conservaron dos versiones de la aplicación Android.
+
+### v1.0
+
+Primera versión funcional.
+
+Incluía:
+
+- CPU;
+- memoria RAM;
+- disco;
+- temperatura de CPU;
+- red;
+- alertas;
+- historial;
+- servicios;
+- procesos.
+
+En el entorno virtualizado utilizado para la demostración se comprobó que la temperatura de CPU no podía obtenerse de forma confiable.
+
+En determinados casos el sistema devolvía valores como:
 
 ```text
-http://IP_DEL_SERVIDOR:3000
+0 °C
+```
+
+Ese valor no representaba una temperatura real del procesador.
+
+---
+
+### v1.1
+
+Versión final recomendada.
+
+Se retiró completamente la medición de temperatura de CPU de:
+
+- backend;
+- API;
+- sistema de alertas;
+- configuración de umbrales;
+- frontend;
+- dashboard;
+- aplicación Android.
+
+La decisión se tomó para evitar presentar información incorrecta o engañosa cuando el sistema anfitrión o la máquina virtual no proporcionan sensores térmicos accesibles.
+
+La versión v1.1 mantiene el monitoreo de:
+
+- CPU;
+- memoria RAM;
+- disco;
+- red;
+- procesos;
+- servicios;
+- alertas;
+- eventos;
+- información general del sistema.
+
+---
+
+## Releases
+
+Las versiones compiladas de LinuxGuard NOC se distribuyen mediante **GitHub Releases**.
+
+Se publicaron:
+
+```text
+v1.0
+v1.1
+```
+
+La versión:
+
+```text
+v1.1
+```
+
+es la versión final recomendada para la entrega.
+
+Los archivos APK se mantienen en GitHub Releases en lugar de almacenarse directamente dentro del repositorio de código fuente.
+
+---
+
+## Documentación
+
+La documentación completa del proyecto se encuentra en:
+
+```text
+docs/
+```
+
+Incluye:
+
+```text
+LinuxGuard_NOC_Documentacion_Final_v1.1.pdf
+LinuxGuard_NOC_Documentacion_Final_v1.1.docx
 ```
 
 ---
@@ -682,6 +794,21 @@ http://IP_DEL_SERVIDOR:3000
 - Los gráficos mantienen muestras solamente durante la sesión actual del navegador.
 - La aplicación está diseñada principalmente para redes locales y entornos académicos.
 - CORS y el endpoint de modificación de configuración no incluyen autenticación porque el proyecto se utiliza en un entorno de laboratorio controlado.
+- La temperatura de CPU no forma parte de la versión final v1.1 debido a las limitaciones de acceso a sensores térmicos en el entorno virtualizado utilizado.
+
+---
+
+## GitHub Helper
+
+Para facilitar la revisión y análisis del repositorio se utilizó **GitIngest**.
+
+Repositorio en GitHub:
+
+https://github.com/frxxn-linuxadmin/linuxguard-noc
+
+Revisión mediante GitIngest:
+
+https://gitingest.com/frxxn-linuxadmin/linuxguard-noc
 
 ---
 
@@ -693,21 +820,13 @@ Proyecto realizado para:
 
 Desarrollo:
 
-- Franco
-- Lucio
+- Franco Carrasco
+- Lucio Rivera
 
 Proyecto:
 
 **LinuxGuard NOC**
 
-## GitHub Helper
+Versión final:
 
-Para facilitar la revisión y análisis del repositorio se utilizó GitIngest.
-
-Repositorio en GitHub:
-
-https://github.com/frxxn-linuxadmin/linuxguard-noc
-
-Revisión mediante GitIngest:
-
-https://gitingest.com/frxxn-linuxadmin/linuxguard-noc
+**v1.1**
